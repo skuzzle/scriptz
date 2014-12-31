@@ -34,7 +34,7 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.7 - TODO
+[ CURRENT ] Version 1.7 - 31.12.2014
   Features:
     + Login Button will be disabled until correct code has been entered.
     + If login code could not completely be resolved, the unresolved character
@@ -336,8 +336,8 @@ var PROPERTY_CHANGE_LISTENERS = new Array();
 var SECTOR_INFO_LISTENERS = new Array();
 
 
-//Execute the script
-$(document).ready(main);
+//Execute the script when the page is fully loaded
+$(window).load(main);
 
 
 
