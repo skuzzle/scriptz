@@ -36,9 +36,12 @@
 Changelog
 [ CURRENT ] Version 1.7 - TODO
   Features:
+    + Login Button will be disabled until correct code has been entered.
     + If login code could not completely be resolved, the unresolved character
       will be selected within the input field for the code.
-      
+  Internal:
+    + Script will be executed when document is ready
+
 Version 1.6 - 16.05.2014
   Features:
     + Resource prices are shown in HZ
@@ -334,7 +337,7 @@ var SECTOR_INFO_LISTENERS = new Array();
 
 
 //Execute the script
-main();
+$(document).ready(main);
 
 
 
@@ -1138,16 +1141,26 @@ function getSectorFromNewsEntry(entry) {
 
 //==== FEATURE: LOGIN INTEGRATION ====
 var doFocusCodeField;
+var loginBtn;
 function loginIntegration(serverLogin) {
- var loginBtnSelector = 'input[src="set/gfx/in5.gif"]'
- if (serverLogin) {
-     loginBtnSelector = 'input[src="tpl/gfx/in5.gif"]'
- }
- var loginBtn = $(loginBtnSelector);
- var inputVname = $('input[name="vname"]');
- var inputUcode = $('input[name="ucode"]');
- var rxName = $('input[name="uname"]');
+var loginBtnSelector = 'input[src="set/gfx/in5.gif"]'
+    if (serverLogin) {
+        loginBtnSelector = 'input[src="tpl/gfx/in5.gif"]'
+    }
+    loginBtn = $(loginBtnSelector);
+    var inputVname = $('input[name="vname"]');
+    var inputUcode = $('input[name="ucode"]');
+    var rxName = $('input[name="uname"]');
 
+    loginBtn.prop("disabled", true);
+    inputUcode.bind('input propertychange', function() {
+        var currentCode = inputUcode.val();
+        var idx = currentCode.indexOf("?");
+        var disable = idx != -1 || currentCode.length != 4
+        loginBtn.prop("disabled", disable);
+    });
+
+ 
  // insert venad name
  inputVname.attr("value", getSelf());
  
@@ -1213,11 +1226,15 @@ function handleInsertCode(property, oldVal, newVal) {
          inp.val(result.code);
          if (doFocusCodeField) {
             var idx = result.code.indexOf("?");
-            if (idx != -1) {
+            var invalidCode = idx != -1;
+            if (invalidCode) {
                 var input = inp[0];
                 setInputSelection(input, idx, idx + 1);
+                // login button will be enabled by changing the value of the code input
             } else {
                 inp.focus().select();
+                // enable login button
+                loginBtn.prop("disabled", false);
             }
          }
      });
