@@ -704,7 +704,7 @@ function saveOrionSettings() {
  GM_setValue(PROPERTY_ENABLE_CHAT, chatEnabled);
 
  $("#ok").fadeIn(500, function () {
-     $(this).fadeOut(1000);
+     $(this).delay(2000).fadeOut(1000);
  });
 }
 
@@ -712,7 +712,7 @@ function testSettings() {
  requestJson(API_TEST_LOGIN, { }, function(result) {
      if (result.success) {
          $("#ok").fadeIn(500, function () {
-             $(this).fadeOut(1000);
+             $(this).delay(2000).fadeOut(1000);
          });
      } else {
          alert(MSG_LOGIN_FAIL);
