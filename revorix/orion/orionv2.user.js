@@ -34,7 +34,9 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.7 - 31.12.2014
+[ CURRENT ] Version 1.8 - TODO
+
+Version 1.7 - 31.12.2014
   Features:
     + Login Button will be disabled until correct code has been entered.
     + If login code could not completely be resolved, the unresolved character
