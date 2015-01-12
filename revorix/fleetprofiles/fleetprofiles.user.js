@@ -16,6 +16,9 @@
 
 /* 
 Changelog
+Version 0.3 - TODO
+    Features:
+        + Add default profile
 Version 0.2 - 31.12.2014
     Features:
         + Add buttons to add/remove ships to current selection
@@ -106,11 +109,16 @@ var MSG_REMOVE_FROM = "Aus Profil entfernen";
 var MSG_TITLE_TOGGLE = "Schiffe aus diesem Profil aus-/abwählen";
 var MSG_TITLE_ADD = "Schiffe aus diesem Profil zur Auswahl hinzufügen";
 var MSG_TITLE_REMOVE = "Schiffe aus diesem Profil der Auswahl entfernen";
+var MSG_SET_DEFAULT = "Als Standard-Profil";
+var MSG_REMOVE_DEFAULT = "Nicht mehr als Standard-Profil";
+var MSG_TITLE_SET_DEFAULT = "Schiffe aus dem Standard-Profil werden im Portal automatisch ausgewählt";
+var MSG_TITLE_REMOVE_DEFAULT = "Kein Profil wird als Standard-Profil markiert. Im Portal werden die Schiffe aus dem am besten passende Profil ausgewählt";
 
 
 var PROPERTY_PROFILES = "polly.portal.PROFILES";
 var PROPERTY_ENABLE_PROFILES = "polly.portal.ENABLE";
 var PROPERTY_LAST_SELECTED = "polly.portal.LAST_SELECTED"
+var PROPERTY_DEFAULT_PROFILE = "polly.portal.DEFAULT_PROFILE";
 
 var TOGGLE = {};
 var RX_FLEET_NAME = "";
@@ -119,8 +127,8 @@ var ID_REGEX = /\?sid=(\d+)/;
 
 
 
-// run the script
-main();
+// Execute the script when the page is fully loaded
+$(window).load(main);
 
 
 
@@ -207,7 +215,8 @@ function handleRemoveProfile() {
 function profilesAsOptions(profiles) {
     var cnt = "";
     $.each(profiles, function(k, v) {
-        cnt += '<option value="'+k+'">'+k+'</option>';
+        var display = isDefault(k) ? k+" (S)" : k;
+        cnt += '<option value="'+k+'">'+display+'</option>';
     });
     return cnt;
 }
@@ -217,7 +226,7 @@ function adjustShipTable() {
     var profiles = getProfiles();
 
     var bfr = "";
-    bfr = '<div style="margin-bottom: 10px" class="wrpd fulL"><input type="checkbox" id="enable"/><label for="enable">{1}</label> <span class="profile" style="margin-left:15px">{0} </span><select class="profile" id="profilesTop"></select></div>'.format(MSG_PROFILE, MSG_ENABLE_PROFILES);
+    bfr = '<div style="margin-bottom: 10px" class="wrpd fulL"><input type="checkbox" id="enable"/><label for="enable">{1}</label> <span class="profile" style="margin-left:15px">{0} </span><select class="profile" id="profilesTop"></select> <a href="#" id="toggleDefault" style="display:none"></a></div>'.format(MSG_PROFILE, MSG_ENABLE_PROFILES);
     table.before(bfr);
     table.attr("id", "shipTable");
     $("#enable").prop("checked", getEnableProfiles());
@@ -226,9 +235,11 @@ function adjustShipTable() {
         GM_setValue(PROPERTY_ENABLE_PROFILES, enable);
         if (enable) {
             $(".profile").show();
+            $("#toggleDefault").show();
             $("#profilesTop").trigger("change");
         } else {
             $(".profile").hide();
+            $("#toggleDefault").hide();
             resetColors();
         }
     });
@@ -256,6 +267,7 @@ function adjustShipTable() {
             hideShowButtons(profile);
             $("#selProfile").html("{0}: {1}".format(MSG_PROFILE, name));
             showProfile(name, profile);
+            toggleDefaultLink(name);
         }
 
     });
@@ -287,9 +299,32 @@ function adjustShipTable() {
         colorShips(profile);
         hideShowButtons(profile);
     });
+    $("#toggleDefault").click(function() {
+        var name = $("#profilesTop").val();
+        if (isDefault(name)) {
+            // Remove default profile
+            setDefaultProfile("");
+        } else {
+            setDefaultProfile(name);
+        }
+        $("#profilesTop").html(profilesAsOptions(profiles));
+        $("#profilesTop").val(getLastSelectedProfileName());
+        toggleDefaultLink(name);
+    });
     
     $("#profilesTop").trigger("change");
     $("#enable").trigger("change");
+}
+
+function toggleDefaultLink(selectedProfile) {
+    var link = $("#toggleDefault");
+    if (isDefault(selectedProfile)) {
+        link.attr("title", MSG_TITLE_REMOVE_DEFAULT);
+        link.html(MSG_REMOVE_DEFAULT);
+    } else {
+        link.html(MSG_SET_DEFAULT);
+        link.attr("title", MSG_TITLE_SET_DEFAULT);
+    }
 }
 
 // extracts a ship id from the provided td and returns it as string
@@ -495,12 +530,13 @@ function portalGui(bestMatch) {
     $.each(getProfiles(), function (k, v) {
         if (v.ignore || v.ids.length == 0) { return true; }
         var matches = bestMatch.matches[k] == undefined ? 0 : bestMatch.matches[k];
-        var ratio = roundn(matches / v.ids.length, 2);
+        var ratio = roundn(calcRatio(k, v, matches), 2);
         if (matches !== 0) {
+            var display = isDefault(k) ? k+" (S)" : k;
             prf += '<a class="prfllnk" action="add" href="#" name="{0}" title="{1}">+++</a> <a class="prfllnk" action="remove" href="#" name="{0}" title="{2}">---</a> '.format(k, MSG_TITLE_ADD, MSG_TITLE_TOGGLE);
             prf += '<a class="prfllnk" action="toggle" href="#" name="{0}" title="{1}">'.format(k, MSG_TITLE_TOGGLE);
         }
-        prf += k;
+        prf += display;
         if (matches !== 0) {
             prf += '</a>'; 
         }
@@ -539,6 +575,7 @@ function findBestMatchingProfile() {
         name : null,
         matches : {}
     };
+
     // Count occurrence of ships
     ships.each(function() {
         var id = $(this).val();
@@ -555,10 +592,11 @@ function findBestMatchingProfile() {
             });
         });
     });
-
-
-    // select profile with best matches to ship count ratio
+    
+    // select profile with best matches to ship count ratio (or default profile)
+    
     $.each(getProfiles(), function (k, v) {
+        // XXX: ignores default profile too!
         if (v.ignore) { return true; }
         
         if (ret.best === null) { 
@@ -566,8 +604,9 @@ function findBestMatchingProfile() {
             ret.name = k;
         }
         
-        var cRatio = ret.matches[k] / v.ids.length;
-        var bRatio = ret.matches[ret.name] / ret.best.ids.length;
+        var cRatio = calcRatio(k, v, ret.matches[k]);
+        var bRatio = calcRatio(ret.name, ret.best, ret.matches[ret.name]);
+        
         if (cRatio >= bRatio) {
             ret.best = v;
             ret.name = k;
@@ -576,6 +615,14 @@ function findBestMatchingProfile() {
 
     return ret;
 }
+function calcRatio(name, profile, matches) {
+    if (isDefault(name)) {
+        return 2.0;
+    } else {
+        return matches / profile.ids.length;
+    }
+}
+
 // select ships from the provided profile
 function selectProfile(profile, check, action) {
     // select ships in this profile
@@ -644,7 +691,18 @@ function selectProfile(profile, check, action) {
         $('input[name="flstl"]').prop("checked", true);
     }
 }
-
+// Whether the given name is the default profile
+function isDefault(profileName) {
+    return profileName === getDefaultProfileName();
+}
+// Gets thedefault profile name or "" if none is set
+function getDefaultProfileName() {
+    return GM_getValue(PROPERTY_DEFAULT_PROFILE, "");
+}
+// Sets the default profile name 
+function setDefaultProfile(profileName) {
+    GM_setValue(PROPERTY_DEFAULT_PROFILE, profileName);
+}
 // Name of the last edited profile if any
 function getLastSelectedProfileName() {
     return GM_getValue(PROPERTY_LAST_SELECTED, "");
