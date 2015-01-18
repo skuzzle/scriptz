@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.7
+// @version     1.8
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
@@ -34,7 +34,7 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.8 - TODO
+[ CURRENT ] Version 1.8 - 18.01.2015
   Feature:
     + Auto login if captcha is available
 
