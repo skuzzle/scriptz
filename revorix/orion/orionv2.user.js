@@ -21,7 +21,7 @@
 // @include     http://www.revorix.info/php/map_fflotte.php?fid=*
 // @include     http://www.revorix.info/php/venad_list.php?pktsur=1
 // @include     http://www.revorix.info/php/venad_list.php?pkttop=1
-// @include     http://www.revorix.info/php/setup.php
+// @include     http://www.revorix.info/php/setup.php*
 // @include     http://www.revorix.info/php/news_pop.php*
 // @include		http://www.revorix.info/php/map_attack.php?fida=*
 // @include		http://www.revorix.info/php/handel_all.php*
@@ -35,6 +35,8 @@
 /* 
 Changelog
 [ CURRENT ] Version 1.8 - TODO
+  Feature:
+    + Auto login if captcha is available
 
 Version 1.7 - 31.12.2014
   Features:
@@ -152,7 +154,7 @@ var DEFAULT_REQUEST_TIMEOUT = 5000; // ms
 
 //API URLs
 var POLLY_URL = LOCAL_SERVER ? "https://localhost:83" : "https://projectpolly.de:443";
-var API_REQUEST_SECTOR = "/api/orion/json/sector"
+var API_REQUEST_SECTOR = "/api/orion/json/sector";
 var API_REQUEST_QUADRANT = "/api/orion/json/quadrant";
 var API_POST_SECTOR = "/api/orion/json/postSector";
 var API_SUBMIT_CODE = "/api/orion/get/loginCode";
@@ -200,6 +202,7 @@ var PROPERTY_ORION_HIDDEN = "polly.orion.orionHidden";
 var PROPERTY_SECTOR_SIZE = "polly.orion.sectorSize";
 var PROPERTY_CHAT_ENTRIES = "polly.orion.chatEntries";
 var PROPERTY_ENABLE_CHAT = "polly.orion.enableChat";
+var PROPERTY_AUTO_LOGIN = "polly.orion.autoLogin";
 
 
 // DEPRECATED PROPERTIES
@@ -287,6 +290,7 @@ var MSG_ORION_CHAT = "OrionChat";
 var MSG_SEND = "Senden";
 var MSG_CHAT_IRC_COPY = "IRC";
 var MSG_ACTIVATE_CHAT = "Orion Chat aktivieren";
+var MSG_ACTIVATE_AUTO_LOGIN = "Auto Login aktivieren";
 
 //Default clan tag
 var CLAN_TAG = "[Loki]";
@@ -336,7 +340,6 @@ var LAST_SECTOR = null;
 var PROPERTY_CHANGE_LISTENERS = new Array();
 //Collection of listeners to be notified when sector data has been parsed
 var SECTOR_INFO_LISTENERS = new Array();
-
 
 //Execute the script when the page is fully loaded
 $(window).load(main);
@@ -564,7 +567,7 @@ function sendChatEntry() {
     var txt = inp.val();
     inp.val("");
     inp.focus();
-    if (txt == "") {
+    if (txt === "") {
         return;
     }
     postJson(API_ADD_TO_CHAT, {sender: getSelf(), message: txt, irc: ircCopy}, 
@@ -593,7 +596,7 @@ function battleReportIntegration(isLiveKb) {
 
 
 function printStatusBattelReport(status) {
- if(status != "") {
+ if(status !== "") {
  	status = " - " + status;
  }
  var node = getElementByXPath("/html/body/table/tbody/tr[2]/td/table/tbody/tr/td");
@@ -609,7 +612,6 @@ function printStatusBattelReport(status) {
  			node.innerHTML = "Zurückgelassene Ressourcen" + status;
  		}
  	} catch(e) {
- 		;
  	}
  }
 }
@@ -675,9 +677,10 @@ function settingIntegration() {
  content += '</tr>';
  content += '<tr><td>{0}</td><td><input tabindex="256" class="text" type="password" id="pollyPw"/> ({1})</td></tr>'.format(MSG_POLLY_PW, MSG_LEAVE_EMPTY);
  content += '<tr><td>{0}</td><td><input tabindex="257" type="checkBox" id="activateChat"/></td></tr>'.format(MSG_ACTIVATE_CHAT);
- content += '<tr><td>{0}</td><td><input tabindex="258" class="text" type="text" id="maxChatEntries"/></td></tr>'.format(MSG_CHAT_ENTRIES);
+ content += '<tr><td>{0}</td><td><input tabindex="258" type="checkBox" id="activateAutoLogin"/></td></tr>'.format(MSG_ACTIVATE_AUTO_LOGIN);
+ content += '<tr><td>{0}</td><td><input tabindex="259" class="text" type="text" id="maxChatEntries"/></td></tr>'.format(MSG_CHAT_ENTRIES);
  content += '<tr><td>{0}</td><td>{1}</td></tr>'.format(MSG_VENAD, getSelf());
- content += '<tr><td>{0}</td><td><input tabindex="259" class="text" type="text" id="clantag"/></td><td style="text-align:center"><span id="ok" style="display:none; color:green">OK</span></td></tr>'.format(MSG_CLAN_TAG);
+ content += '<tr><td>{0}</td><td><input tabindex="260" class="text" type="text" id="clantag"/></td><td style="text-align:center"><span id="ok" style="display:none; color:green">OK</span></td></tr>'.format(MSG_CLAN_TAG);
  content += '</table></div></div></div>';
  body.append(content);
 
@@ -686,6 +689,7 @@ function settingIntegration() {
  $("#pollyName").val(getPollyUserName());
  $("#maxChatEntries").val(getMaxChatEntries());
  $("#activateChat").attr("checked", getChatEnabled());
+ $("#activateAutoLogin").attr("checked", getAutoLoginEnabled());
  $("#clantag").val(getClanTag());
 }
 
@@ -695,18 +699,21 @@ function saveOrionSettings() {
  var pw = $("#pollyPw").val();
  var hash = CryptoJS.MD5(pw).toString();
  GM_setValue(PROPERTY_LOGIN_NAME, userName);
- if (pw != "") {
+ if (pw !== "") {
      GM_setValue(PROPERTY_LOGIN_PASSWORD, hash);
  }
  GM_setValue(PROPERTY_CLAN_TAG, tag);
 
- var maxEntries = parseInt($("#maxChatEntries").val());
+ var maxEntries = parseInt($("#maxChatEntries").val(), 10);
  var chatEnabled = $("#activateChat").is(":checked");
+ var autoLoginEnabled = $("#activateAutoLogin").is(":checked");
+ 
  GM_setValue(PROPERTY_CHAT_ENTRIES, maxEntries);
  GM_setValue(PROPERTY_ENABLE_CHAT, chatEnabled);
+ setAutoLoginEnabled(autoLoginEnabled);
 
  $("#ok").fadeIn(500, function () {
-     $(this).delay(2000).fadeOut(1000);
+     $(this).fadeOut(1000);
  });
 }
 
@@ -714,7 +721,7 @@ function testSettings() {
  requestJson(API_TEST_LOGIN, { }, function(result) {
      if (result.success) {
          $("#ok").fadeIn(500, function () {
-             $(this).delay(2000).fadeOut(1000);
+             $(this).fadeOut(1000);
          });
      } else {
          alert(MSG_LOGIN_FAIL);
@@ -741,7 +748,7 @@ function getScoreboard() {
          postData += tableData[i].firstChild.textContent;
      }
 
-     if (i % 3 == 0) {
+     if (i % 3 === 0) {
          postData += "\n";
      } else {
          postData += " ";
@@ -773,7 +780,7 @@ function getTop50Scoreboard() {
          postData += tableData[i].firstChild.textContent;
      }
 
-     if (col++ == 3) {
+     if (col++ === 3) {
          postData += "\n";
          col = 0;
      } else {
@@ -832,28 +839,24 @@ function showChanges(resultEntries, isTop50) {
      var pointsDiff = entry.currentPoints - entry.previousPoints;
      var rankDiff = entry.currentRank - entry.previousRank;
      var rankText = ""
-     if (entry.previousRank == -1 || rankDiff == 0) {
+     if (entry.previousRank === -1 || rankDiff === 0) {
          rankText = " -- {0} seit {1}".format(MSG_NO_CHANGE, entry.previousDate);
      } else if (rankDiff < 0) {
-         rankText = '<span style="color:green"> +{0} (vorher: {1})</span> {2}'
-             .format(-rankDiff, entry.previousRank, entry.previousDate);
+         rankText = '<span style="color:green"> +{0} (vorher: {1})</span> {2}'.format(-rankDiff, entry.previousRank, entry.previousDate);
      } else if (rankDiff > 0) {
-         rankText = '<span style="color:read"> -{0} (vorher: {1})</span> {2}'
-             .format(rankDiff, entry.previousRank, entry.previousDate);
+         rankText = '<span style="color:read"> -{0} (vorher: {1})</span> {2}'.format(rankDiff, entry.previousRank, entry.previousDate);
 
      }
      $(row.cells[0]).append(rankText);
 
      var pointsIdx = isTop50 ? 3 : 2;
      var pointText = '<span> ' + pointsDiff + '</span>';
-     if (entry.previousPoints == -1 || pointsDiff == 0) {
+     if (entry.previousPoints === -1 || pointsDiff === 0) {
          pointText = " -- {0} seit {1}".format(MSG_NO_CHANGE, entry.previousDate);
      } else if (pointsDiff > 0) {
-         pointText = '<span style="color:green"> +{0} (vorher: {1})</span> {2}'
-             .format(pointsDiff, entry.previousPoints, entry.previousDate);
+         pointText = '<span style="color:green"> +{0} (vorher: {1})</span> {2}'.format(pointsDiff, entry.previousPoints, entry.previousDate);
      } else if (pointsDiff < 0) {
-         pointText = '<span style="color:red"> {0} (vorher: {1})</span> {2}'
-             .format(pointsDiff, entry.previousPoints, entry.previousDate);
+         pointText = '<span style="color:red"> {0} (vorher: {1})</span> {2}'.format(pointsDiff, entry.previousPoints, entry.previousDate);
      }
 
      $(row.cells[pointsIdx]).append(pointText);
@@ -873,7 +876,7 @@ function storeFleetPosition() { ///html/body/div[2]/div[2]/div/table/tbody/tr/td
 function getShips() {
  var node = null;
  node = getElementByXPath("/html/body/table[3]");
- return node.textContent;;
+ return node.textContent;
 }
 
 function getSensors() {
@@ -899,7 +902,7 @@ function getData() {
 }
 
 function printStatus(status) {
- if (status != "") {
+ if (status !== "") {
      status = " - " + status;
  }
  var node = getElementByXPath("/html/body/table[2]/tbody/tr/td");
@@ -907,7 +910,7 @@ function printStatus(status) {
      if (node.innerHTML.indexOf("Flotten Daten") != -1) {
          node.innerHTML = "Flotten Daten" + status;
      }
- } catch (e) {;
+ } catch (e) {
  }
 }
 
@@ -999,7 +1002,7 @@ function newsGui() {
  $("#maxEntries").change(function () {
      var val = "" + $(this).val();
      if (val.match(/^\d+$/)) {
-         setProperty(PROPERTY_MAX_NEWS_ENTRIES, parseInt(val) - 1, this);
+         setProperty(PROPERTY_MAX_NEWS_ENTRIES, parseInt(val, 10) - 1, this);
          $("#entryStatus").html(" {0}!".format(MSG_SAVED)).css({
              color: "green"
          });
@@ -1037,7 +1040,7 @@ function requestNews(maxEntries) {
      venad: getSelf()
  }, function (result) {
      var newContent = "";
-     if (result.length == 0) {
+     if (result.length === 0) {
          newContent += '<tr><td colspan="6">{0}</td></tr>'.format(MSG_NO_ENTRIES);
      } else {
          $.each(result, function (idx, entry) {
@@ -1053,6 +1056,7 @@ function requestNews(maxEntries) {
              newContent += '<td>' + entry.date + '</td>'
              newContent += '<td colspan="2">' + getDetailsFromNewsEntry(entry) + '</td>'
              newContent += '</tr>'
+             return true;
          });
      }
      $("#orionNews").html(newContent);
@@ -1076,6 +1080,7 @@ function requestNewsForQuadrant(maxEntries, quadName, onSuccess) {
          if (sector.quadName == quadName) {
              entries.push(entry);
          }
+         return true;
      });
      onSuccess(entries);
  });
@@ -1154,19 +1159,24 @@ var loginBtnSelector = 'input[src="set/gfx/in5.gif"]'
     var inputUcode = $('input[name="ucode"]');
     var rxName = $('input[name="uname"]');
 
-    loginBtn.prop("disabled", true);
+    inputUcode.css( { backgroundImage: "none" });
+    codeFail(loginBtn, inputUcode);
     inputUcode.bind('input propertychange', function() {
         var currentCode = inputUcode.val();
         var idx = currentCode.indexOf("?");
-        var disable = idx != -1 || currentCode.length != 4
-        loginBtn.prop("disabled", disable);
+        var disable = idx != -1 || currentCode.length != 4;
+        if (disable) {
+            codeFail(loginBtn, inputUcode);
+        } else {
+            codeSuccess(loginBtn, inputUcode);
+        }
     });
 
  
  // insert venad name
  inputVname.attr("value", getSelf());
  
- if (rxName.val() == "") {
+ if (rxName.val() === "") {
      // insert rx user name and focus pw field
      rxName.val(getRxLoginName());
      var inputPw = $('input[name="upasswort"]');
@@ -1186,13 +1196,29 @@ var loginBtnSelector = 'input[src="set/gfx/in5.gif"]'
      // store rx user name
      setProperty(PROPERTY_ORION_RX_LOGIN, rxName.val(), this);
 
-     if (self != "" && self.toLowerCase() != getSelf().toLowerCase()) {
+     if (self !== "" && self.toLowerCase() !== getSelf().toLowerCase()) {
          alert(MSG_VENAD_SET.format(self));
      }
      setProperty(PROPERTY_ORION_SELF, self, this);
  });
 
  firePropertyChanged(this, PROPERTY_FILL_IN_CODE, false, getAutoFillInCode());
+}
+
+function codeSuccess(loginButton, inputUCode) {
+    loginButton.prop("disabled", false);
+    loginButton.show();
+    inputUCode.css( { backgroundColor: "green" } );
+    
+    if (getAutoLoginEnabled()) {
+        loginButton.click();
+    }
+}
+
+function codeFail(loginButton, code) {
+    loginButton.prop("disabled", true);
+    loginButton.hide();
+    code.css( { backgroundColor: "red" } );
 }
 
 
@@ -1236,7 +1262,7 @@ function handleInsertCode(property, oldVal, newVal) {
             } else {
                 inp.focus().select();
                 // enable login button
-                loginBtn.prop("disabled", false);
+                codeSuccess(loginBtn, inp);
             }
          }
      });
@@ -1302,7 +1328,7 @@ function parseFleetInformation(includeOwnFleets) {
      fleets: []
  };
  $.each($(cell).html().split("<br>"), function (idx, row) {
-     if (row == "") {
+     if (row === "") {
          return true;
      }
      var strippedRow = stripHtml(row);
@@ -1334,7 +1360,7 @@ function parseFleetInformation(includeOwnFleets) {
 //Reads information of the currently displayed sector and returns them as
 //object
 function parseCurrentSectorInformation() {
- if (LAST_SECTOR != undefined && LAST_SECTOR != null) {
+ if (LAST_SECTOR !== undefined && LAST_SECTOR !== null) {
      return LAST_SECTOR;
  }
  var QUAD_INFO_REGEX = /([a-zA-Z0-9- ]+) X:(\d+) Y:(\d+)/;
@@ -1363,20 +1389,20 @@ function parseCurrentSectorInformation() {
      }
      if (QUAD_INFO_REGEX.test(row)) {
          result['quadName'] = RegExp.$1;
-         result['x'] = parseInt(RegExp.$2);
-         result['y'] = parseInt(RegExp.$3);
+         result['x'] = parseInt(RegExp.$2, 10);
+         result['y'] = parseInt(RegExp.$3, 10);
      } else if (row.indexOf("txt.gif") != -1) {
          result['type'] = stripHtml(row);
      } else if (row.indexOf("a.gif") != -1) {
          var boni = stripHtml(row).replace(/%/g, "").split(" ");
          result['attacker'] = parseInt(boni[0]);
          result['defender'] = parseInt(boni[1]);
-         result['guard'] = parseInt(boni[2]);
+         result['guard'] = parseInt(boni[2], 10);
      } else if (SENS_REGEX.test(row)) {
          result['sens'] = RegExp.$1;
      } else if (RESS_REGEX.test(row)) {
          result.production.push({
-             ressId: parseInt(RegExp.$1),
+             ressId: parseInt(RegExp.$1, 10),
              rate: (RegExp.$3)
          });
      } else if (row.indexOf("Individuelles Portal") != -1) {
@@ -1392,8 +1418,8 @@ function parseCurrentSectorInformation() {
      }
      return true;
  });
- result.valid = result['x'] != null && result['y'] != null &&
-     result['type'] != null && result['quadName'] != null;
+ result.valid = result['x'] !== null && result['y'] !== null &&
+     result['type'] !== null && result['quadName'] !== null;
 
  LAST_SECTOR = result;
  return result;
@@ -1418,7 +1444,7 @@ function initProperties() {
 //Creates orion gui within revorix flight view
 function mapGui() {
  var table = findLastTable();
- if (table == null) {
+ if (table === null) {
      log("No table found?!");
      return;
  }
@@ -2122,6 +2148,13 @@ function getChatEnabled() {
     return GM_getValue(PROPERTY_ENABLE_CHAT, true);
 }
 
+// Whether to automatically login as soon as the correct code has been entered
+function getAutoLoginEnabled() {
+    return GM_getValue(PROPERTY_AUTO_LOGIN, false);
+}
+function setAutoLoginEnabled(enabled) {
+    GM_setValue(PROPERTY_AUTO_LOGIN, enabled);
+}
 
 
 //==== HELPER FUNCTIONS ====
