@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.8
+// @version     1.8.1
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
@@ -34,7 +34,11 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.8 - 18.01.2015
+[ CURRENT ] Version 1.8.1 - 18.01.2015
+  Feature:
+   + Remove Attack link for own Clan Wache
+
+Version 1.8 - 18.01.2015
   Feature:
     + Auto login if captcha is available
 
@@ -291,9 +295,11 @@ var MSG_SEND = "Senden";
 var MSG_CHAT_IRC_COPY = "IRC";
 var MSG_ACTIVATE_CHAT = "Orion Chat aktivieren";
 var MSG_ACTIVATE_AUTO_LOGIN = "Auto Login aktivieren";
+var MSG_LINK_REMOVED = "Gewaltsam eindringen (Link entfernt, da eigene Clanwache)"
 
 //Default clan tag
 var CLAN_TAG = "[Loki]";
+var CW_TAG = "UNITED WE STAND";
 
 //Different kinds of news entries
 var NEWS_ORION_FLEET = "ORION_FLEET"
@@ -1291,6 +1297,7 @@ function fleetControlIntegration() {
 
 //Entry point of this script for revorix flight integration
 function mapIntegration() {
+ handleClanWache();
  mapGui();
  initProperties();
 }
@@ -1440,6 +1447,19 @@ function initProperties() {
 }
 
 
+function handleClanWache() {
+    var inp = $('input[name="eindringen"]');
+    var td = $(".ce");
+    
+    if (td === null || td === undefined) {
+        return;
+    }
+    var text = td.text();
+    if (text.contains(CW_TAG)) {
+        var link = $('a[href^="map_attack"]');
+        link.replaceWith(MSG_LINK_REMOVED);
+    }
+}
 
 //Creates orion gui within revorix flight view
 function mapGui() {
