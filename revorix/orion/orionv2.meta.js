@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.8
+// @version     1.8.2
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
 // @grant 	    GM_deleteValue
 // @grant 	    GM_xmlhttpRequest
 // @downloadURL https://github.com/skuzzle/scriptz/raw/master/revorix/orion/orionv2.user.js
-// @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/orion/orionv2.meta.js
+// @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/orion/orionv2.user.js
 // @namespace   projectpolly.de
 // @require     http://code.jquery.com/jquery-1.10.2.min.js
 // @require     http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js
