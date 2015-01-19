@@ -34,7 +34,11 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.8.1 - 18.01.2015
+[ CURRENT ] Version 1.8.2 - TODO
+  Feature:
+   + Distinguish between main page and server login for the auto login feature
+
+Version 1.8.1 - 18.01.2015
   Feature:
    + Remove Attack link for own Clan Wache
 
@@ -206,7 +210,8 @@ var PROPERTY_ORION_HIDDEN = "polly.orion.orionHidden";
 var PROPERTY_SECTOR_SIZE = "polly.orion.sectorSize";
 var PROPERTY_CHAT_ENTRIES = "polly.orion.chatEntries";
 var PROPERTY_ENABLE_CHAT = "polly.orion.enableChat";
-var PROPERTY_AUTO_LOGIN = "polly.orion.autoLogin";
+var PROPERTY_AUTO_LOGIN = "polly.orion.autoLogin"; // on ServerLogin Page
+var PROPERTY_AUTO_LOGIN_MAIN_PAGE = "polly.orion.autoLoginMainPage"; // on main RX page
 
 
 // DEPRECATED PROPERTIES
@@ -296,6 +301,8 @@ var MSG_CHAT_IRC_COPY = "IRC";
 var MSG_ACTIVATE_CHAT = "Orion Chat aktivieren";
 var MSG_ACTIVATE_AUTO_LOGIN = "Auto Login aktivieren";
 var MSG_LINK_REMOVED = "Gewaltsam eindringen (Link entfernt, da eigene Clanwache)"
+var MSG_AUTO_LOGIN_MAIN = "Auf der Hauptseite";
+var MSG_AUTO_LOGIN_SERVER = "Beim Server Login";
 
 //Default clan tag
 var CLAN_TAG = "[Loki]";
@@ -683,10 +690,10 @@ function settingIntegration() {
  content += '</tr>';
  content += '<tr><td>{0}</td><td><input tabindex="256" class="text" type="password" id="pollyPw"/> ({1})</td></tr>'.format(MSG_POLLY_PW, MSG_LEAVE_EMPTY);
  content += '<tr><td>{0}</td><td><input tabindex="257" type="checkBox" id="activateChat"/></td></tr>'.format(MSG_ACTIVATE_CHAT);
- content += '<tr><td>{0}</td><td><input tabindex="258" type="checkBox" id="activateAutoLogin"/></td></tr>'.format(MSG_ACTIVATE_AUTO_LOGIN);
- content += '<tr><td>{0}</td><td><input tabindex="259" class="text" type="text" id="maxChatEntries"/></td></tr>'.format(MSG_CHAT_ENTRIES);
+ content += '<tr><td>{0}</td><td><input tabindex="258" type="checkBox" id="activateAutoLoginMain" name="autoLoginMain"/><label for="autoLoginMain">{1}</label> <input tabindex="259" type="checkBox" id="activateAutoLoginServer" name="autoLoginServer"/><label for="autoLoginServer">{2}</label></td></tr>'.format(MSG_ACTIVATE_AUTO_LOGIN, MSG_AUTO_LOGIN_MAIN, MSG_AUTO_LOGIN_SERVER);
+ content += '<tr><td>{0}</td><td><input tabindex="260" class="text" type="text" id="maxChatEntries"/></td></tr>'.format(MSG_CHAT_ENTRIES);
  content += '<tr><td>{0}</td><td>{1}</td></tr>'.format(MSG_VENAD, getSelf());
- content += '<tr><td>{0}</td><td><input tabindex="260" class="text" type="text" id="clantag"/></td><td style="text-align:center"><span id="ok" style="display:none; color:green">OK</span></td></tr>'.format(MSG_CLAN_TAG);
+ content += '<tr><td>{0}</td><td><input tabindex="261" class="text" type="text" id="clantag"/></td><td style="text-align:center"><span id="ok" style="display:none; color:green">OK</span></td></tr>'.format(MSG_CLAN_TAG);
  content += '</table></div></div></div>';
  body.append(content);
 
@@ -695,7 +702,8 @@ function settingIntegration() {
  $("#pollyName").val(getPollyUserName());
  $("#maxChatEntries").val(getMaxChatEntries());
  $("#activateChat").attr("checked", getChatEnabled());
- $("#activateAutoLogin").attr("checked", getAutoLoginEnabled());
+ $("#activateAutoLoginMain").attr("checked", getAutoLoginMainEnabled());
+ $("#activateAutoLoginServer").attr("checked", getAutoLoginServerEnabled());
  $("#clantag").val(getClanTag());
 }
 
@@ -712,11 +720,13 @@ function saveOrionSettings() {
 
  var maxEntries = parseInt($("#maxChatEntries").val(), 10);
  var chatEnabled = $("#activateChat").is(":checked");
- var autoLoginEnabled = $("#activateAutoLogin").is(":checked");
+ var autoLoginMainEnabled = $("#activateAutoLoginMain").is(":checked");
+ var autoLoginServerEnabled = $("#activateAutoLoginServer").is(":checked");
  
  GM_setValue(PROPERTY_CHAT_ENTRIES, maxEntries);
  GM_setValue(PROPERTY_ENABLE_CHAT, chatEnabled);
- setAutoLoginEnabled(autoLoginEnabled);
+ setAutoLoginMainEnabled(autoLoginMainEnabled);
+ setAutoLoginServerEnabled(autoLoginServerEnabled);
 
  $("#ok").fadeIn(500, function () {
      $(this).fadeOut(1000);
@@ -1155,8 +1165,10 @@ function getSectorFromNewsEntry(entry) {
 //==== FEATURE: LOGIN INTEGRATION ====
 var doFocusCodeField;
 var loginBtn;
+var isServerLogin;
 function loginIntegration(serverLogin) {
-var loginBtnSelector = 'input[src="set/gfx/in5.gif"]'
+    var loginBtnSelector = 'input[src="set/gfx/in5.gif"]'
+    isServerLogin = serverLogin;
     if (serverLogin) {
         loginBtnSelector = 'input[src="tpl/gfx/in5.gif"]'
     }
@@ -1211,14 +1223,20 @@ var loginBtnSelector = 'input[src="set/gfx/in5.gif"]'
  firePropertyChanged(this, PROPERTY_FILL_IN_CODE, false, getAutoFillInCode());
 }
 
+function handleAutoLogin(serverLogin, loginButton) {
+    if (serverLogin && getAutoLoginServerEnabled() || 
+        !serverLogin && getAutoLoginMainEnabled()) {
+            
+        loginButton.click();
+    }
+}
+
 function codeSuccess(loginButton, inputUCode) {
     loginButton.prop("disabled", false);
     loginButton.show();
     inputUCode.css( { backgroundColor: "green" } );
     
-    if (getAutoLoginEnabled()) {
-        loginButton.click();
-    }
+    handleAutoLogin(isServerLogin, loginButton);
 }
 
 function codeFail(loginButton, code) {
@@ -2169,10 +2187,18 @@ function getChatEnabled() {
 }
 
 // Whether to automatically login as soon as the correct code has been entered
-function getAutoLoginEnabled() {
+// on main page
+function getAutoLoginMainEnabled() {
+    return GM_getValue(PROPERTY_AUTO_LOGIN_MAIN_PAGE, false);
+}
+function setAutoLoginMainEnabled(enabled) {
+    GM_setValue(PROPERTY_AUTO_LOGIN_MAIN_PAGE, enabled);
+}
+// on server login page
+function getAutoLoginServerEnabled() {
     return GM_getValue(PROPERTY_AUTO_LOGIN, false);
 }
-function setAutoLoginEnabled(enabled) {
+function setAutoLoginServerEnabled(enabled) {
     GM_setValue(PROPERTY_AUTO_LOGIN, enabled);
 }
 
