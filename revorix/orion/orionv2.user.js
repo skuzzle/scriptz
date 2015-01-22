@@ -183,7 +183,7 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 // Runtime available changelog
 var CHANGELOG = {};
 CHANGELOG['1.8.6'] = "* In der Karte wird ein Link zur Quadranten Heatmap angezeigt.";
-CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
+CHANGELOG['1.8.5'] = "* Changelog aller Versionen wird in den Rx Einstellungen angezeigt.\n* Opt-in für Deaktivierung des Login Buttons.";
 CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
 CHANGELOG['1.8.3'] = "* Neue Einstellungen: Soll Login Button deaktiviert werden bis der korrekte Code eingegeben wurde?\n* Bug-Fix beim Logincode handling.\n* Benachrichtigung wenn das Script aktualisiert wurde.\n* Orion Script Version wird in den Rx Einstellungen angezeigt.";
 
