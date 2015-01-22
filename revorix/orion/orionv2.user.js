@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.8.4
+// @version     1.8.5
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
@@ -35,7 +35,12 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.8.4 - 22.01.2014
+[ CURRENT ] Version 1.8.5 - 22.01.2014
+  Feature:
+   + Show full Changelog in Rx settings
+   + Opt-in for disabling login button 
+   
+Version 1.8.4 - 22.01.2014
   Feature:
    + Behavior hot fix
    
@@ -173,8 +178,9 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
-CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden."
-CHANGELOG['1.8.3'] = "* Neue Einstellungen: Soll Login Button deaktiviert werden bis der korrekte Code eingegeben wurde?\n* Bug-Fix beim Logincode handling.\n* Anzeige dieses Dialoges nachdem das Script aktualisiert wurde.\n* Orion Script Version wird in den Rx Einstellungen angezeigt.";
+CHANGELOG['1.8.5'] = "* Changelog aller Versionen wird in den Rx Einstellungen angezeigt.\n* Opt-in für Deaktivierung des Login Buttons.";
+CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
+CHANGELOG['1.8.3'] = "* Neue Einstellungen: Soll Login Button deaktiviert werden bis der korrekte Code eingegeben wurde?\n* Bug-Fix beim Logincode handling.\n* Benachrichtigung wenn das Script aktualisiert wurde.\n* Orion Script Version wird in den Rx Einstellungen angezeigt.";
 
 
 //API URLs
@@ -741,6 +747,7 @@ function settingIntegration() {
  content += '<tr><td>{0}</td><td><input tabindex="263" class="text" type="text" id="cwPassword"/></td></tr>'.format(MSG_CW_PASSWORD);
  content += '<tr><td>{0}</td><td><input tabindex="264" type="checkBox" id="cwAutoEnter"/></td><td style="text-align:center"><span id="ok" style="display:none; color:green">OK</span></td></tr>'.format(MSG_CW_AUTO_ENTER);
  content += '</table></div></div></div>';
+ content += createChangelogTable();
  body.append(content);
 
  $("#savePolly").click(saveOrionSettings);
@@ -786,6 +793,20 @@ function saveOrionSettings() {
  $("#ok").fadeIn(500, function () {
      $(this).fadeOut(1000);
  });
+}
+
+function createChangelogTable() {
+    var cl = "";
+    $.each(CHANGELOG, function(version, changes) {
+        var tmp = "Version: {0}<br/>{1}<br/><br/>".format(version, changes.replace(/\n/gi, "<br/>"));
+        cl += tmp;
+    });
+
+    var result = '<br/><div id="changelog" class="wrpd ce"><div class="ml"><div class="mr"><table class="wrpd full">';
+    result += '<tr><td class="nfo">Orion Changelog</td></tr>';
+    result += '<tr><td>{0}</td></tr>'.format(cl);
+    result += '</table></div></div></div>';
+    return result;
 }
 
 function testSettings() {
@@ -2284,7 +2305,7 @@ function setCwAutoEnter(autoEnter) {
 
 // disable login button until correct code is inserted
 function getLoginButtonDisabled() {
-    return GM_getValue(PROPERTY_DISABLE_LOGIN_BUTTON, true);
+    return GM_getValue(PROPERTY_DISABLE_LOGIN_BUTTON, false);
 }
 function setLoginButtonDisabled(disabled) {
     GM_setValue(PROPERTY_DISABLE_LOGIN_BUTTON, disabled);
