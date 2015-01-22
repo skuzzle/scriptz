@@ -173,6 +173,7 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
+CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden."
 CHANGELOG['1.8.3'] = "* Neue Einstellungen: Soll Login Button deaktiviert werden bis der korrekte Code eingegeben wurde?\n* Bug-Fix beim Logincode handling.\n* Anzeige dieses Dialoges nachdem das Script aktualisiert wurde.\n* Orion Script Version wird in den Rx Einstellungen angezeigt.";
 
 
