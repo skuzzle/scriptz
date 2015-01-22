@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.8.3
+// @version     1.8.4
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
@@ -35,7 +35,11 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.8.3 - 22.01.2014
+[ CURRENT ] Version 1.8.4 - 22.01.2014
+  Feature:
+   + Behavior hot fix
+   
+Version 1.8.3 - 22.01.2014
   Feature:
    + Improve login integration
    + Show changelog after script has been updated
@@ -479,7 +483,7 @@ function cleanUp() {
 function handleUpdate() {
     var prevVersion = GM_getValue(PROPERTY_PREVIOUS_VERSION, "");
     var currentVersion = GM_info.script.version;
-    if (prevVersion != currentVersion || debug) {
+    if (prevVersion != currentVersion) {
         GM_setValue(PROPERTY_PREVIOUS_VERSION, currentVersion);
         var cl = CHANGELOG[currentVersion];
         if (cl != null && cl != undefined) {
