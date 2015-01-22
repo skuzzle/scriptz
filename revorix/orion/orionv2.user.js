@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.8.5
+// @version     1.8.6
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
@@ -35,7 +35,11 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.8.5 - 22.01.2014
+[ CURRENT ] Version 1.8.6 - 22.01.2014
+  Feature:
+   + Add link to heat map
+
+Version 1.8.5 - 22.01.2014
   Feature:
    + Show full Changelog in Rx settings
    + Opt-in for disabling login button 
@@ -178,7 +182,8 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
-CHANGELOG['1.8.5'] = "* Changelog aller Versionen wird in den Rx Einstellungen angezeigt.\n* Opt-in für Deaktivierung des Login Buttons.";
+CHANGELOG['1.8.6'] = "* In der Karte wird ein Link zur Quadranten Heatmap angezeigt.";
+CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
 CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
 CHANGELOG['1.8.3'] = "* Neue Einstellungen: Soll Login Button deaktiviert werden bis der korrekte Code eingegeben wurde?\n* Bug-Fix beim Logincode handling.\n* Benachrichtigung wenn das Script aktualisiert wurde.\n* Orion Script Version wird in den Rx Einstellungen angezeigt.";
 
@@ -198,6 +203,7 @@ var API_TEST_LOGIN = "/api/testLogin";
 var API_ADD_TO_CHAT = "/orion/chat/add";
 var API_REQUEST_CHAT = "/orion/chat/request";
 var API_GET_PRICES = "/api/orion/prices";
+var API_HEAT_MAP = "/api/orion/heatMap";
 var IMG_URL_DEFAULT = "http://www.revorix.info/gfx/q/";
 var IMG_URL_8 = "http://www.revorix.info/gfx/q8/";
 var IMG_URL_15 = "http://www.revorix.info/gfx/q15/";
@@ -1574,7 +1580,6 @@ function mapGui() {
      log("No table found?!");
      return;
  }
-
  var firstCell = $(table.rows[1].cells[0]);
  var jtbl = $(table);
  var appendStr = '';
@@ -1582,7 +1587,7 @@ function mapGui() {
  var display = getOrionActivated() ? "" : "display:none";
  appendStr += '<tr><td>';
  var showToggleText = getOrionHidden() ? MSG_SHOW_ORION : MSG_HIDE_ORION;
- appendStr += '<p><b style="color:yellow">Orion</b> '+createLink(showToggleText, "", "toggleShow")+'</p>';
+ appendStr += '<p><b style="color:yellow">Orion</b> '+createLink(showToggleText, "", "toggleShow")+' | <a target="_blank" id="heatMap" href="#">HeatMap</a></p>';
  appendStr += createCheckBox(MSG_ACTIVATE_ORION, PROPERTY_ORION_ON);
  appendStr += '<span class="hideIfOff" style="' + display + '">';
  appendStr += createCheckBox(MSG_UNVEIL_MAP, PROPERTY_AUTO_UNVEIL, margin);
@@ -1590,7 +1595,7 @@ function mapGui() {
  appendStr += createCheckBox(MSG_TRANSMIT_DATA, PROPERTY_POST_SECTOR_INFOS, margin);
  appendStr += createCheckBox(MSG_SHARE_OWN_FLEET_POSITION, PROPERTY_POST_OWN_FLEET_INFOS, margin);
  appendStr += createCheckBox(MSG_SHOW_SKY_NEWS, PROPERTY_ENABLE_QUAD_SKY_NEWS, margin);
- appendStr += createLink(MSG_CLEAR_QUAD_CACHE, margin, "clearCache");
+ appendStr += createLink(MSG_CLEAR_QUAD_CACHE, margin, "clearCache")+'<br/>';
  appendStr += '</span>';
 
  appendStr += '<p class="hideIfOff" style="' + display + '"><b style="color:yellow">{0}</b></p>'.format(MSG_STATUS);
@@ -1640,6 +1645,12 @@ function mapGui() {
      appendIf(MSG_OPPONENT_FLEET, sector.fleets);
      appendIf(MSG_CLAN_PORTALS, sector.clanPortals);
      appendIf(MSG_OWN_PORTALS, sector.personalPortals);
+     
+     var params = {};
+     params['venad'] = getSelf();
+     params['quadrant'] = sector.quadName;
+     var heatMapUrl = makeApiUrl(API_HEAT_MAP, true, params);
+     $("#heatMap").attr("href", heatMapUrl);
  });
 }
 //Finds the last wrpd full table on the current page
@@ -1661,7 +1672,7 @@ function createCheckBox(caption, property, style) {
 }
 
 function createLink(caption, style, id) {
- return '<a href="#" id="' + id + '" style="' + style + '">' + caption + '</a><br/>'
+ return '<a href="#" id="' + id + '" style="' + style + '">' + caption + '</a>'
 }
 //Initializes a checkbox: sets its checked state according to its property and
 //adds a change handler which changes their property
