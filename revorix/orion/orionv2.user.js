@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.8.2
+// @version     1.8.3
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
 // @grant 	    GM_deleteValue
+// @grant 	    GM_info
 // @grant 	    GM_xmlhttpRequest
 // @downloadURL https://github.com/skuzzle/scriptz/raw/master/revorix/orion/orionv2.user.js
 // @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/orion/orionv2.user.js
@@ -34,7 +35,12 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.8.2 - 19.01.2014
+[ CURRENT ] Version 1.8.3 - 22.01.2014
+  Feature:
+   + Improve login integration
+   + Show changelog after script has been updated
+
+Version 1.8.2 - 19.01.2014
   Feature:
    + Distinguish between main page and server login for the auto login feature
    + Configurable password and auto enter for Clanwache
@@ -159,6 +165,11 @@ var DEBUG = false;        // Whether debug output is shown on console
 var LOCAL_SERVER = false; // use local server for testing
 var VERSION = "1.6";      // Expected API version of server responses
 var DEFAULT_REQUEST_TIMEOUT = 5000; // ms
+var SCRIPT_EXECUTION_DELAY = 150; //ms
+
+// Runtime available changelog
+var CHANGELOG = {};
+CHANGELOG['1.8.3'] = "* Neue Einstellungen: Soll Login Button deaktiviert werden bis der korrekte Code eingegeben wurde?\n* Bug-Fix beim Logincode handling.\n* Anzeige dieses Dialoges nachdem das Script aktualisiert wurde.\n* Orion Script Version wird in den Rx Einstellungen angezeigt.";
 
 
 //API URLs
@@ -215,6 +226,9 @@ var PROPERTY_AUTO_LOGIN = "polly.orion.autoLogin"; // on ServerLogin Page
 var PROPERTY_AUTO_LOGIN_MAIN_PAGE = "polly.orion.autoLoginMainPage"; // on main RX page
 var PROPERTY_CW_PASSWORD = "polly.orion.cwPassword";
 var PROPERTY_CW_AUTO_ENTER = "polly.orion.cwAutoEnter";
+var PROPERTY_DISABLE_LOGIN_BUTTON = "polly.orion.disableLogin";
+
+var PROPERTY_PREVIOUS_VERSION = "polly.orion.prevVersion";
 
 // DEPRECATED PROPERTIES
 var PROPERTY_SHARE_CODE = "polly.orion.shareCode";
@@ -272,7 +286,7 @@ var MSG_SUBJECT_TRAINING_ADDED = "Neues Training gestartet: {0}";
 var MSG_SUBJECT_TRAINING_FINISHED = "Training abgeschlossen: {0}";
 var MSG_SUBJECT_BILL_CLOSED = "Training bezahlt";
 var MSG_DETAILS_PORTAL_REMOVED = "von {0} nach Unbekannt";
-var MSG_DETAILS_TRAINING_ADDED = "aktueller Wert: {0}, Kosten: {1} Cr"
+var MSG_DETAILS_TRAINING_ADDED = "aktueller Wert: {0}, Kosten: {1} Cr";
 var MSG_UNKNOWN = "Unbekannt";
 var MSG_VENAD_SET = "Dein Orion Venadname wurde auf {0} festgelegt.\n\nDiese Meldung erscheint nur ein mal";
 var MSG_SHARE_CODE = "Code teilen";
@@ -307,6 +321,9 @@ var MSG_AUTO_LOGIN_MAIN = "Auf der Hauptseite";
 var MSG_AUTO_LOGIN_SERVER = "Beim Server Login";
 var MSG_CW_PASSWORD = "Clanwache Passwort"
 var MSG_CW_AUTO_ENTER = "Clanwache Passwort automatisch senden";
+var MSG_DISABLE_LOGIN_BUTTON = "Login Button deaktivieren, bis der richtige Code eingegeben wurde";
+var MSG_SCRIPT_UPDATED = "Orion Script wurde auf Version {0} aktualisiert. Neu in dieser Version: \n\n{1}";
+var MSG_ORION_VERSION = "Orion Script Version";
 
 //Default clan tag
 var CLAN_TAG = "[Loki]";
@@ -359,7 +376,9 @@ var PROPERTY_CHANGE_LISTENERS = new Array();
 var SECTOR_INFO_LISTENERS = new Array();
 
 //Execute the script when the page is fully loaded
-$(window).load(main);
+$(window).load(function() {
+    setTimeout(main, SCRIPT_EXECUTION_DELAY);
+});
 
 
 
@@ -367,6 +386,7 @@ $(window).load(main);
 //to perform
 function main() {
   cleanUp();
+  handleUpdate();
  if (!FEATURE_ALL) {
      return;
  }
@@ -454,6 +474,19 @@ function main() {
 function cleanUp() {
     GM_deleteValue(PROPERTY_SHARE_CODE);
     GM_deleteValue(PROPERTY_TEMPORARY_CODE);
+}
+
+function handleUpdate() {
+    var prevVersion = GM_getValue(PROPERTY_PREVIOUS_VERSION, "");
+    var currentVersion = GM_info.script.version;
+    if (prevVersion != currentVersion || debug) {
+        GM_setValue(PROPERTY_PREVIOUS_VERSION, currentVersion);
+        var cl = CHANGELOG[currentVersion];
+        if (cl != null && cl != undefined) {
+            var msg = MSG_SCRIPT_UPDATED.format(currentVersion, cl);
+            alert(msg);
+        }
+    }
 }
 
 
@@ -689,17 +722,19 @@ function settingIntegration() {
  content += '<br/><div id="orion" class="wrpd ce"><div class="ml"><div class="mr"><table class="wrpd full">';
  content += '<tr><td class="nfo" colspan="3">Orion Einstellungen</td></tr>';
  content += '<tr>';
- content += '<td>{0}</td><td><input tabindex="255" class="text" type="text" id="pollyName"/></td>'.format(MSG_POLLY_USERNAME);
- content += '<td rowspan="8" style="vertical-align:middle; text-align:center"><input tabindex="300" class="Button" type="button" id="savePolly" value="{0}"/><br/><input tabindex="301" class="Button" type="button" id="testSettings" value="{1}"/></td>'.format(MSG_STORE_SETTINGS, MSG_TEST_SETTINGS);
+ content += '<td>{0}</td><td>{1}</td>'.format(MSG_ORION_VERSION, GM_info.script.version);
+ content += '<td rowspan="10" style="vertical-align:middle; text-align:center"><input tabindex="300" class="Button" type="button" id="savePolly" value="{0}"/><br/><input tabindex="301" class="Button" type="button" id="testSettings" value="{1}"/></td>'.format(MSG_STORE_SETTINGS, MSG_TEST_SETTINGS);
  content += '</tr>';
+ content += '<tr><td>{0}</td><td><input tabindex="255" class="text" type="text" id="pollyName"/></td></tr>'.format(MSG_POLLY_USERNAME);
  content += '<tr><td>{0}</td><td><input tabindex="256" class="text" type="password" id="pollyPw"/> ({1})</td></tr>'.format(MSG_POLLY_PW, MSG_LEAVE_EMPTY);
  content += '<tr><td>{0}</td><td><input tabindex="257" type="checkBox" id="activateChat"/></td></tr>'.format(MSG_ACTIVATE_CHAT);
  content += '<tr><td>{0}</td><td><input tabindex="258" type="checkBox" id="activateAutoLoginMain" name="autoLoginMain"/><label for="autoLoginMain">{1}</label> <input tabindex="259" type="checkBox" id="activateAutoLoginServer" name="autoLoginServer"/><label for="autoLoginServer">{2}</label></td></tr>'.format(MSG_ACTIVATE_AUTO_LOGIN, MSG_AUTO_LOGIN_MAIN, MSG_AUTO_LOGIN_SERVER);
- content += '<tr><td>{0}</td><td><input tabindex="260" class="text" type="text" id="maxChatEntries"/></td></tr>'.format(MSG_CHAT_ENTRIES);
+ content += '<tr><td>{0}</td><td><input tabindex="260" type="checkBox" id="disableLoginButton"/></td></tr>'.format(MSG_DISABLE_LOGIN_BUTTON);
+ content += '<tr><td>{0}</td><td><input tabindex="261" class="text" type="text" id="maxChatEntries"/></td></tr>'.format(MSG_CHAT_ENTRIES);
  content += '<tr><td>{0}</td><td>{1}</td></tr>'.format(MSG_VENAD, getSelf());
- content += '<tr><td>{0}</td><td><input tabindex="261" class="text" type="text" id="clantag"/></td></tr>'.format(MSG_CLAN_TAG);
- content += '<tr><td>{0}</td><td><input tabindex="262" class="text" type="text" id="cwPassword"/></td></tr>'.format(MSG_CW_PASSWORD);
- content += '<tr><td>{0}</td><td><input tabindex="263" type="checkBox" id="cwAutoEnter"/></td><td style="text-align:center"><span id="ok" style="display:none; color:green">OK</span></td></tr>'.format(MSG_CW_AUTO_ENTER);
+ content += '<tr><td>{0}</td><td><input tabindex="262" class="text" type="text" id="clantag"/></td></tr>'.format(MSG_CLAN_TAG);
+ content += '<tr><td>{0}</td><td><input tabindex="263" class="text" type="text" id="cwPassword"/></td></tr>'.format(MSG_CW_PASSWORD);
+ content += '<tr><td>{0}</td><td><input tabindex="264" type="checkBox" id="cwAutoEnter"/></td><td style="text-align:center"><span id="ok" style="display:none; color:green">OK</span></td></tr>'.format(MSG_CW_AUTO_ENTER);
  content += '</table></div></div></div>';
  body.append(content);
 
@@ -710,6 +745,7 @@ function settingIntegration() {
  $("#activateChat").attr("checked", getChatEnabled());
  $("#activateAutoLoginMain").attr("checked", getAutoLoginMainEnabled());
  $("#activateAutoLoginServer").attr("checked", getAutoLoginServerEnabled());
+ $("#disableLoginButton").attr("checked", getLoginButtonDisabled());
  $("#clantag").val(getClanTag());
  $("#cwPassword").val(getCwPassword());
  $("#cwAutoEnter").attr("checked", getCwAutoEnter());
@@ -732,6 +768,7 @@ function saveOrionSettings() {
  var autoLoginServerEnabled = $("#activateAutoLoginServer").is(":checked");
  var cwPassword = $("#cwPassword").val();
  var cwAutoEnter = $("#cwAutoEnter").is(":checked");
+ var loginDisabled = $("#disableLoginButton").is(":checked");
  
  GM_setValue(PROPERTY_CHAT_ENTRIES, maxEntries);
  GM_setValue(PROPERTY_ENABLE_CHAT, chatEnabled);
@@ -739,6 +776,7 @@ function saveOrionSettings() {
  setAutoLoginServerEnabled(autoLoginServerEnabled);
  setCwPassword(cwPassword);
  setCwAutoEnter(cwAutoEnter);
+ setLoginButtonDisabled(loginDisabled);
 
  $("#ok").fadeIn(500, function () {
      $(this).fadeOut(1000);
@@ -1238,22 +1276,24 @@ function loginIntegration(serverLogin) {
 function handleAutoLogin(serverLogin, loginButton) {
     if (serverLogin && getAutoLoginServerEnabled() || 
         !serverLogin && getAutoLoginMainEnabled()) {
-            
+
+        loginButton.focus();
         loginButton.click();
     }
 }
 
 function codeSuccess(loginButton, inputUCode) {
-    loginButton.prop("disabled", false);
-    loginButton.show();
+    if (getLoginButtonDisabled()) {
+        loginButton.prop("disabled", false);
+    }
     inputUCode.css( { backgroundColor: "green" } );
-    
     handleAutoLogin(isServerLogin, loginButton);
 }
 
 function codeFail(loginButton, code) {
-    loginButton.prop("disabled", true);
-    loginButton.hide();
+    if (getLoginButtonDisabled()) {
+        loginButton.prop("disabled", true);
+    }
     code.css( { backgroundColor: "red" } );
 }
 
@@ -1286,21 +1326,25 @@ function handleInsertCode(property, oldVal, newVal) {
 
  if (newVal) {
      requestJson(API_REQUEST_CODE, {}, function (result) {
-         var inp = $('input[name="ucode"]');
-         inp.val(result.code);
-         if (doFocusCodeField) {
-            var idx = result.code.indexOf("?");
-            var invalidCode = idx != -1;
+        var inp = $('input[name="ucode"]');
+        inp.val(result.code);
+        var idx = result.code.indexOf("?");
+        var invalidCode = idx != -1;
+
+        if (doFocusCodeField) {
             if (invalidCode) {
                 var input = inp[0];
                 setInputSelection(input, idx, idx + 1);
                 // login button will be enabled by changing the value of the code input
             } else {
                 inp.focus().select();
-                // enable login button
-                codeSuccess(loginBtn, inp);
             }
-         }
+        }
+        
+        if (!invalidCode) {
+            codeSuccess(loginBtn, inp);
+        }
+        
      });
  } else {
      $('input[name="ucode"]').val("");
@@ -1728,17 +1772,15 @@ function handleEnableSkyNewsQuads(property, oldVal, newVal) {
              var plus = "+";
              switch (entry.type) {
              case NEWS_ORION_FLEET:
-                  var href = RX_SECTOR_URL.format(findQuadrantIdFroumUri(), sector.x, sector.y);
-                   newContent += '<span class="hover" x="{0}" y="{1}" title="Reporter: {2} um {3}">Orion Flotte: <b>{4}</b> bei <a href="{6}">{5}</a> ({3})</span>'
-                     .format(sector.x, sector.y, entry.reporter, entry.date, entry.subject.ownerName, location(sector, false), href);
-                 ' (' + entry.date + ')</span>';
+                 var href = RX_SECTOR_URL.format(findQuadrantIdFroumUri(), sector.x, sector.y);
+                 newContent += '<span class="hover" x="{0}" y="{1}" title="Reporter: {2} um {3}">Orion Flotte: <b>{4}</b> bei <a href="{6}">{5}</a> ({3})</span>'.format(sector.x, sector.y, entry.reporter, entry.date, entry.subject.ownerName, location(sector, false), href);
+                 newContent += ' (' + entry.date + ')</span>';
                  newContent += "<br/>";
                  break;
              case NEWS_FLEET_SPOTTED:
                  var href = RX_SECTOR_URL.format(findQuadrantIdFroumUri(), sector.x, sector.y);
-                 newContent += '<span class="hover" x="{0}" y="{1}" title="Reporter: {2} um {3}">Flotte: <b>{4}</b> bei <a href="{6}">{5}</a> ({3})</span>'
-                     .format(sector.x, sector.y, entry.reporter, entry.date, entry.subject.ownerName, location(sector, false), href);
-                 ' (' + entry.date + ')</span>';
+                 newContent += '<span class="hover" x="{0}" y="{1}" title="Reporter: {2} um {3}">Flotte: <b>{4}</b> bei <a href="{6}">{5}</a> ({3})</span>'.format(sector.x, sector.y, entry.reporter, entry.date, entry.subject.ownerName, location(sector, false), href);
+                 newContent += ' (' + entry.date + ')</span>';
                  newContent += "<br/>";
                  break;
              case NEWS_PORTAL_MOVED:
@@ -1746,8 +1788,7 @@ function handleEnableSkyNewsQuads(property, oldVal, newVal) {
                  plus = "-"; // fall through
              case NEWS_PORTAL_ADDED:
                  newContent += '<span class="hover" x="{0}" y="{1}">'.format(sector.x, sector.y);
-                 newContent += plus + "Ind. Portal: <b>{0}</b> bei {1}"
-                     .format(entry.subject.ownerName, location(sector, false));
+                 newContent += plus + "Ind. Portal: <b>{0}</b> bei {1}".format(entry.subject.ownerName, location(sector, false));
                  newContent += ' </span>';
                  newContent += "</br>";
                  break;
@@ -2236,6 +2277,13 @@ function setCwAutoEnter(autoEnter) {
     GM_setValue(PROPERTY_CW_AUTO_ENTER, autoEnter);
 }
 
+// disable login button until correct code is inserted
+function getLoginButtonDisabled() {
+    return GM_getValue(PROPERTY_DISABLE_LOGIN_BUTTON, true);
+}
+function setLoginButtonDisabled(disabled) {
+    GM_setValue(PROPERTY_DISABLE_LOGIN_BUTTON, disabled);
+}
 
 //==== HELPER FUNCTIONS ====
 //Prints a string to the console if DEBUG is true
