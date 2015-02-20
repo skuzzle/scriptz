@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name        RX Flottenprofile
-// @version     0.2
+// @version     0.3
 // @description Verwalten von verschiedenen Flottenprofilen
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @grant       GM_deleteValue
 // @downloadURL https://github.com/skuzzle/scriptz/raw/master/revorix/fleetprofiles/fleetprofiles.user.js
-// @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/fleetprofiles/fleetprofiles.meta.js
+// @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/fleetprofiles/fleetprofiles.user.js
 // @namespace   projectpolly.de
 // @require     http://code.jquery.com/jquery-1.10.2.min.js
 // @include     http://www.revorix.info/php/schiff_portal.php*
@@ -16,9 +16,10 @@
 
 /* 
 Changelog
-Version 0.3 - TODO
+Version 0.3 - 20.02.2015
     Features:
         + Add default profile
+        + Do not modify fleet name etc. when adding/removing ships (in Ship Portal)
 Version 0.2 - 31.12.2014
     Features:
         + Add buttons to add/remove ships to current selection
@@ -530,9 +531,9 @@ function portalGui(bestMatch) {
     $.each(getProfiles(), function (k, v) {
         if (v.ignore || v.ids.length == 0) { return true; }
         var matches = bestMatch.matches[k] == undefined ? 0 : bestMatch.matches[k];
-        var ratio = roundn(calcRatio(k, v, matches), 2);
+        var ratio = roundn(matches / v.ids.length, 2);
+        var display = isDefault(k) ? k+" (S)" : k;
         if (matches !== 0) {
-            var display = isDefault(k) ? k+" (S)" : k;
             prf += '<a class="prfllnk" action="add" href="#" name="{0}" title="{1}">+++</a> <a class="prfllnk" action="remove" href="#" name="{0}" title="{2}">---</a> '.format(k, MSG_TITLE_ADD, MSG_TITLE_TOGGLE);
             prf += '<a class="prfllnk" action="toggle" href="#" name="{0}" title="{1}">'.format(k, MSG_TITLE_TOGGLE);
         }
@@ -638,10 +639,15 @@ function selectProfile(profile, check, action) {
             this.checked = isInProfile ? false : this.checked;
         }
     });
-    
+       
     // trigger recalculation of admiralität
     ships.first().trigger("click");
     ships.first().trigger("click");
+    
+    if (action !== "toggle") {
+        // do not modify fleet settings if ships are added/removed
+        return;
+    }
     
     // set fleet name if specified in profile
     if (check && profile["name"] != undefined && profile["name"] != "") {
