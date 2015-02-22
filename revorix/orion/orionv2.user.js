@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.8.7
+// @version     1.8.7.1
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
@@ -188,7 +188,7 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
-CHANGELOG['1.8.7'] = "* Modus zum sicheren trainieren von Schiffen hinzugefügt.";
+CHANGELOG['1.9.0'] = "* Modus zum sicheren trainieren von Schiffen hinzugefügt.";
 CHANGELOG['1.8.6'] = "* In der Karte wird ein Link zur Quadranten Heatmap angezeigt.";
 CHANGELOG['1.8.5'] = "* Changelog aller Versionen wird in den Rx Einstellungen angezeigt.\n* Opt-in für Deaktivierung des Login Buttons.";
 CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
@@ -1478,12 +1478,7 @@ function calculateAwTPT(rawAw, rawBonus) {
 }
 
 function calcFactor(rawBonus) {
-    if (rawBonus < 0) {
-        return 1.0 - rawBonus / 100.0;
-    } else if (rawBonus > 0) {
-        return 1.0 + rawBonus / 100.0;
-    }
-    return 1.0;
+    return 1.0 + rawBonus / 100.0;
 }
 
 function isTrainModeAttacker(attackerName) {
