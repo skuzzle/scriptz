@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.8.6
+// @version     1.8.7
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
@@ -25,6 +25,7 @@
 // @include     http://www.revorix.info/php/setup.php*
 // @include     http://www.revorix.info/php/news_pop.php*
 // @include		http://www.revorix.info/php/map_attack.php?fida=*
+// @include     http://www.revorix.info/php/map_attack.php?fid=*
 // @include		http://www.revorix.info/php/handel_all.php*
 // @include		http://www.revorix.info/php/handel_eigen.php*
 // ==/UserScript==
@@ -35,7 +36,11 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.8.6 - 22.01.2014
+[ CURRENT ] Version 1.9.0 - [TODO]
+  Feature:
+   + Add training mode
+
+Version 1.8.6 - 22.01.2014
   Feature:
    + Add link to heat map
 
@@ -164,6 +169,7 @@ var FEATURE_BATTLE_REPORTS    = true; // send battle reports to polly
 var FEATURE_ORION_CHAT        = true; // enable orion ingame chat and Orion 
                                       // online list
 var FEATURE_RESOURCE_PRICES   = true; // show prices in HZ and tooltip
+var FEATURE_TRAINING          = true; // Support for ship training
 
 
 
@@ -182,6 +188,7 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
+CHANGELOG['1.8.7'] = "* Modus zum sicheren trainieren von Schiffen hinzugefügt.";
 CHANGELOG['1.8.6'] = "* In der Karte wird ein Link zur Quadranten Heatmap angezeigt.";
 CHANGELOG['1.8.5'] = "* Changelog aller Versionen wird in den Rx Einstellungen angezeigt.\n* Opt-in für Deaktivierung des Login Buttons.";
 CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
@@ -244,6 +251,7 @@ var PROPERTY_AUTO_LOGIN_MAIN_PAGE = "polly.orion.autoLoginMainPage"; // on main 
 var PROPERTY_CW_PASSWORD = "polly.orion.cwPassword";
 var PROPERTY_CW_AUTO_ENTER = "polly.orion.cwAutoEnter";
 var PROPERTY_DISABLE_LOGIN_BUTTON = "polly.orion.disableLogin";
+var PROPERTY_LAST_SECTOR_JSON = "polly.orion.lastSecotJson";
 
 var PROPERTY_PREVIOUS_VERSION = "polly.orion.prevVersion";
 
@@ -341,7 +349,9 @@ var MSG_CW_AUTO_ENTER = "Clanwache Passwort automatisch senden";
 var MSG_DISABLE_LOGIN_BUTTON = "Login Button deaktivieren, bis der richtige Code eingegeben wurde";
 var MSG_SCRIPT_UPDATED = "Orion Script wurde auf Version {0} aktualisiert. Neu in dieser Version: \n\n{1}";
 var MSG_ORION_VERSION = "Orion Script Version";
-
+var MSG_TRAIN_MODE = "Trainigs Modus";
+var MSG_ATTACKER_INFO = "Angreifer Flotte: {0}<br>Angreifer Schaden (roh): {1}<br>Sektor: {2}<br>Boni: {3}<br><br>Schaden (inkl. Bonus): {4}</br><b>Schaden (TPT, inkl. Bonus): <span style='color:red'>{5}</span></b> ";
+var MSG_WRONG_SECTOR_WARNING = "Achtung: Orion hat den falschen Sektor gewählt.\nBitte wähle in der Karte den Sektor auf dem sich die Flotten befinden bevor du auf 'Angreifen' klickst";
 //Default clan tag
 var CLAN_TAG = "[Loki]";
 var CW_TAG = "UNITED WE STAND";
@@ -476,9 +486,13 @@ function main() {
      if (FEATURE_BATTLE_REPORTS) {
          battleReportIntegration(false); // news kb
      }
- } else if (uri.indexOf("map_attack") != -1) {
+ } else if (uri.indexOf("map_attack.php?fida") != -1) {
      if (FEATURE_BATTLE_REPORTS) {
          battleReportIntegration(true); // live kb
+     }
+ } else if (uri.indexOf("map_attack.php?fid") != -1) {
+     if (FEATURE_TRAINING) {
+        trainingIntegration();
      }
  } else if (uri.indexOf("handel") != -1) {
     if (FEATURE_RESOURCE_PRICES) {
@@ -1384,6 +1398,125 @@ function handleInsertCode(property, oldVal, newVal) {
 }
 
 
+//==== FEATURE: TRAINING INTEGRATION ====
+function trainingIntegration() {
+    var lastSector = getLastSector();
+    
+    var infoTable = $('table.gnfo');
+    var attackerFleet = getAttackerFleetName(infoTable.html());
+    if (isTrainModeAttacker(attackerFleet)) {
+        var aw = parseInt(getAw(attackerFleet));
+        var awTPT = calculateAwTPT(aw, lastSector.attacker);
+        var sectorValid = verifyCorrectSector(lastSector, attackerFleet);
+        if (!sectorValid) {
+            alert(MSG_WRONG_SECTOR_WARNING);
+        }
+
+        attackerInfoGui(infoTable, lastSector, aw, attackerFleet);
+        var defenderTable = $('table[class="wrpd full"]').first();
+        defenderInfoGui(lastSector, defenderTable, awTPT, true);
+    }
+}
+
+function defenderInfoGui(sector, defenderTable, awTPT, sectorValid) {
+    $(defenderTable).find("td").each(function(foo) {
+        var me = $(this);
+        var idx = me.index();
+        if (idx == 1) {
+            var defenderFleet = me.text();
+            
+            if (isTrainingDefender(defenderFleet)) {
+                var def = getDef(defenderFleet);
+                var damage = def - awTPT;
+                var info = "Def: {0} ".format(def);
+                if (damage < 0 || !sectorValid) {
+                    info += '<span style="color: red">';
+                } else {
+                    info += '<span style="color: green">';
+                }
+                info += "Differenz: <b>{0}</b>".format(damage);
+                info += '</span>';
+                me.html("<b>"+defenderFleet+"</b> " + info);
+            }
+        }
+    });
+}
+
+function verifyCorrectSector(sector, fleetName) {
+    var fleets = sector.ownFleets;
+    for (i = 0; i < fleets.length; ++i) {
+        if (fleets[i].fleetName === fleetName) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function attackerInfoGui(infoTable, sector, aw, attackerFleet) {
+    var sectorName = '{0} X:{1} Y:{2}'.format(sector.quadName, sector.x, sector.y);
+    var boni = 'Angreifer: <b>{0}%</b>, Verteidiger: {1}%'.format(sector.attacker, sector.defender);
+    var awTPT = calculateAwTPT(aw, sector.attacker);
+    var rawAw = calculateAw(aw, sector.attacker);
+
+    var html = '<table class="full gnfo" style="margin-top:10px;">';
+    html += '<tr><td style="backround-image: none; border-top: 5px solid red; border-bottom: 5px solid red">';
+    html += '<b>{0}</b><br>'.format(MSG_TRAIN_MODE);
+    html += MSG_ATTACKER_INFO.format(attackerFleet, aw, sectorName, boni, rawAw, awTPT);
+    html += '</td></tr>';
+    html += '</table>';
+    infoTable.after(html);
+}
+
+function calculateAw(rawAw, rawBonus) {
+    var factor = calcFactor(rawBonus);
+    return rawAw * factor;
+}
+
+function calculateAwTPT(rawAw, rawBonus) {
+    var factor = calcFactor(rawBonus);
+    return rawAw * factor * 0.5;
+}
+
+function calcFactor(rawBonus) {
+    if (rawBonus < 0) {
+        return 1.0 - rawBonus / 100.0;
+    } else if (rawBonus > 0) {
+        return 1.0 + rawBonus / 100.0;
+    }
+    return 1.0;
+}
+
+function isTrainModeAttacker(attackerName) {
+    var regex = /aw-\d+/;
+    return regex.test(attackerName);
+}
+
+function isTrainingDefender(defenderName) {
+    var regex = /sc-\d+-pz-\d+/;
+    return regex.test(defenderName);
+}
+
+function getAw(attackerName) {
+    return attackerName.substr(attackerName.indexOf("-") + 1);
+}
+
+function getDef(defenderName) {
+    var regex = /sc-(\d+)-pz-(\d+)/;
+    regex.test(defenderName);
+    return parseInt(RegExp.$1) + parseInt(RegExp.$2);
+}
+
+function getAttackerFleetName(tableHtml) {
+    var start = tableHtml.indexOf("Flotte: ");
+    if (start != -1) {
+        start += "Flotte: ".length;
+        var end = tableHtml.indexOf("<br>", start);
+        var length = end - start;
+        return tableHtml.substr(start, length);
+    }
+    return "<unknown>";
+}
+
 
 //==== FEATURE: MAP INTEGRATION ====
 //Entry point for the script which is executed for the fleet control panel page
@@ -1898,7 +2031,8 @@ function handlePostSectorInfos(property, oldVal, newVal) {
  sector['shareOwnFleets'] = getPostOwnFleetInfos();
  sector['self'] = getSelf();
  LAST_SECTOR = sector;
-
+ setLastSector(sector);
+ 
  fireSectorInfoParsed(sector);
 
  logObject(sector);
@@ -2320,6 +2454,14 @@ function getLoginButtonDisabled() {
 }
 function setLoginButtonDisabled(disabled) {
     GM_setValue(PROPERTY_DISABLE_LOGIN_BUTTON, disabled);
+}
+
+// get last visited sector
+function setLastSector(sector) {
+    GM_setValue(PROPERTY_LAST_SECTOR_JSON, JSON.stringify(sector));
+}
+function getLastSector() {
+    return JSON.parse(GM_getValue(PROPERTY_LAST_SECTOR_JSON));
 }
 
 //==== HELPER FUNCTIONS ====
