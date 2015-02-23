@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.8.7.1
+// @version     1.9.0
 // @description Polly Revorix Integration
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
@@ -39,6 +39,7 @@ Changelog
 [ CURRENT ] Version 1.9.0 - [TODO]
   Feature:
    + Add training mode
+   + Adjust Fleet Tag
 
 Version 1.8.6 - 22.01.2014
   Feature:
@@ -188,7 +189,7 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
-CHANGELOG['1.9.0'] = "* Modus zum sicheren trainieren von Schiffen hinzugefügt.";
+CHANGELOG['1.9.0'] = "* Modus zum sicheren trainieren von Schiffen hinzugefügt (Beta).\n* Erkennung der Clanwache an den neuen Flotten-Tag angepasst.";
 CHANGELOG['1.8.6'] = "* In der Karte wird ein Link zur Quadranten Heatmap angezeigt.";
 CHANGELOG['1.8.5'] = "* Changelog aller Versionen wird in den Rx Einstellungen angezeigt.\n* Opt-in für Deaktivierung des Login Buttons.";
 CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
@@ -352,9 +353,10 @@ var MSG_ORION_VERSION = "Orion Script Version";
 var MSG_TRAIN_MODE = "Trainigs Modus";
 var MSG_ATTACKER_INFO = "Angreifer Flotte: {0}<br>Angreifer Schaden (roh): {1}<br>Sektor: {2}<br>Boni: {3}<br><br>Schaden (inkl. Bonus): {4}</br><b>Schaden (TPT, inkl. Bonus): <span style='color:red'>{5}</span></b> ";
 var MSG_WRONG_SECTOR_WARNING = "Achtung: Orion hat den falschen Sektor gewählt.\nBitte wähle in der Karte den Sektor auf dem sich die Flotten befinden bevor du auf 'Angreifen' klickst";
+
 //Default clan tag
 var CLAN_TAG = "[Loki]";
-var CW_TAG = "UNITED WE STAND";
+var CW_TAG = "Von Asgard aus schlugen sie eine Bruecke auf dass ihnen Midgard nie entruecke.";
 
 //Different kinds of news entries
 var NEWS_ORION_FLEET = "ORION_FLEET"
