@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name        RX Flottenprofile
-// @version     0.3
+// @version     0.4
 // @description Verwalten von verschiedenen Flottenprofilen
 // @grant       GM_setValue
 // @grant       GM_getValue
 // @grant       GM_deleteValue
 // @downloadURL https://github.com/skuzzle/scriptz/raw/master/revorix/fleetprofiles/fleetprofiles.user.js
-// @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/fleetprofiles/fleetprofiles.user.js
+// @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/fleetprofiles/fleetprofiles.meta.js
 // @namespace   projectpolly.de
 // @require     http://code.jquery.com/jquery-1.10.2.min.js
 // @include     http://www.revorix.info/php/schiff_portal.php*
@@ -16,6 +16,9 @@
 
 /* 
 Changelog
+Version 0.4 - 28.02.2015
+    Features:
+        + Add 'Clanwache' Feature
 Version 0.3 - 20.02.2015
     Features:
         + Add default profile
@@ -114,17 +117,19 @@ var MSG_SET_DEFAULT = "Als Standard-Profil";
 var MSG_REMOVE_DEFAULT = "Nicht mehr als Standard-Profil";
 var MSG_TITLE_SET_DEFAULT = "Schiffe aus dem Standard-Profil werden im Portal automatisch ausgewählt";
 var MSG_TITLE_REMOVE_DEFAULT = "Kein Profil wird als Standard-Profil markiert. Im Portal werden die Schiffe aus dem am besten passende Profil ausgewählt";
-
+var MSG_CLANWACHE_PROFIL = "Clanwache-Profil (Rückführen deaktivieren)";
+var MSG_ENABLE_CW_MODE = "Clanwache-Modus";
 
 var PROPERTY_PROFILES = "polly.portal.PROFILES";
 var PROPERTY_ENABLE_PROFILES = "polly.portal.ENABLE";
 var PROPERTY_LAST_SELECTED = "polly.portal.LAST_SELECTED"
 var PROPERTY_DEFAULT_PROFILE = "polly.portal.DEFAULT_PROFILE";
+var PROPERTY_CW_MODE_ENABLED = "polly.portal.CW_MODE";
 
 var TOGGLE = {};
 var RX_FLEET_NAME = "";
 var ID_REGEX = /\?sid=(\d+)/;
-
+var DEACTIVATED_COLOR = "#626d82";
 
 
 
@@ -197,9 +202,9 @@ function handleSaveProfile() {
     profile["tag"] = $('input[name="flttg"]').val();
     profile["tarn"] = $('input[name="chktrn"]').is(":checked");
     profile["ignore"] = $('input[name="chkgnr"]').is(":checked");
+    profile["isClanwache"] = $('input[name="chkcw"]').is(":checked");
     profile["entry"] = $('select[name="ntrytyp"]').val();
     profile["quad"] = $('select[name="qdtyp"]').val();
-
     storeProfiles(getProfiles());
     alert(MSG_SAVED);
 }
@@ -227,9 +232,10 @@ function adjustShipTable() {
     var profiles = getProfiles();
 
     var bfr = "";
-    bfr = '<div style="margin-bottom: 10px" class="wrpd fulL"><input type="checkbox" id="enable"/><label for="enable">{1}</label> <span class="profile" style="margin-left:15px">{0} </span><select class="profile" id="profilesTop"></select> <a href="#" id="toggleDefault" style="display:none"></a></div>'.format(MSG_PROFILE, MSG_ENABLE_PROFILES);
+    bfr = '<div style="margin-bottom: 10px" class="wrpd fulL"><input type="checkbox" id="enable"/><label for="enable">{1}</label> <span class="profile" style="margin-left:15px">{0} </span><select class="profile" id="profilesTop"></select> <a href="#" id="toggleDefault" style="display:none"></a><div style="float:right"><input type="checkbox" id="cwMode"/><label for="cwMode">{2}</label></div></div>'.format(MSG_PROFILE, MSG_ENABLE_PROFILES, MSG_ENABLE_CW_MODE);
     table.before(bfr);
     table.attr("id", "shipTable");
+    
     $("#enable").prop("checked", getEnableProfiles());
     $("#enable").change(function() {
         var enable =  $(this).is(":checked");
@@ -243,6 +249,14 @@ function adjustShipTable() {
             $("#toggleDefault").hide();
             resetColors();
         }
+    });
+    
+    // CW Mode
+    $("#cwMode").prop("checked", isCwModeEnabled());
+    $("#cwMode").change(function() {
+        var enable =  $(this).is(":checked");
+        setCwModeEnabled(enable);
+        toggleCwMode(table, enable);
     });
 
     $("#profilesTop").html(profilesAsOptions(profiles));
@@ -273,11 +287,11 @@ function adjustShipTable() {
 
     });
 
+    var name = $("#profilesTop").val();
+    var profile = getProfiles()[name];
     table.find("tr:nth-child(1) td").attr("colspan", "11");
     table.find("tr:nth-child(2)").append("<td class='profile' id='selProfile'></td>");
     table.find("tr:nth-child(n+3)").each(function() {
-        var name = $("#profilesTop").val();
-        var profile = getProfiles()[name];
         var ftd = $(this).find("td:nth-child(1)").first();
         var id = idFromTd(ftd);
         $(this).append('<td class="profile" style="text-align:center"><a href="#" shipid="{1}" class="addTo" title="{3}">+++</a><a href="#" shipid="{1}" class="removeFrom" title="{4}">---</a></td>'.format(MSG_ADD_SHORT, id, MSG_REMOVE_SHORT, MSG_ADD_TO, MSG_REMOVE_FROM));
@@ -315,6 +329,31 @@ function adjustShipTable() {
     
     $("#profilesTop").trigger("change");
     $("#enable").trigger("change");
+    $("#cwMode").trigger("change");
+}
+
+function toggleCwMode(table, enable) {
+    table.find("tr:nth-child(n+3)").each(function() {
+        // check 'Rückführung' column
+        var rufu = $(this).find("td:nth-child(10)").first();
+        var txt = rufu.text();
+        if (txt !== "Rückführung") {
+            // skip this row
+            return true;
+        }
+        // get ship id
+        var ftd = $(this).find("td:nth-child(1)").first();
+        var id = idFromTd(ftd);
+        var inProfile = isInCwProfile(id);
+
+        if (enable && inProfile) {
+            rufu.text("Rückführung");
+            rufu.css( { color: DEACTIVATED_COLOR } );
+        } else if (!enable && inProfile) {
+            rufu.css( { color: "white" } );
+            rufu.html('<a href="schiff_list.php?sid={0}">Rückführung</a>'.format(id));
+        }
+    });
 }
 
 function toggleDefaultLink(selectedProfile) {
@@ -351,7 +390,7 @@ function colorShips(profile) {
         var ids = idFromTd(ftd);
         var id = parseInt(ids, 10);
         if ($.inArray(id, profile.ids) == -1) {
-            ftd.parent().css( { color : "#626d82" } );
+            ftd.parent().css( { color : DEACTIVATED_COLOR } );
         } else {
             ftd.parent().css( { color : "white" } );
         }
@@ -409,7 +448,8 @@ function showProfile(name, profile) {
     });
     quadTypeSelect.html(quadopt);
     quadTypeSelect.val(profile["quad"]);
-    
+
+    var isCw = profile.isClanwache != undefined && profile.isClanwache;
     $("#profileName").html("{0}: <b>{1}</b>".format(MSG_PROFILE, name));
     $('input[name="fltnm"]').val(profile["name"]);
     $('input[name="fltpw"]').val(profile["password"]);
@@ -417,6 +457,7 @@ function showProfile(name, profile) {
     $('input[name="ntrytyp"]').val(profile["entry"]);
     $('input[name="qdtyp"]').val(profile["quad"]);
     $('input[name="chktrn"]').prop("checked", profile["tarn"]);
+    $('input[name="chkcw"]').prop("checked", isCw);
     $('input[name="chkgnr"]').prop("checked", profile["ignore"]);
     entryTypeSelect.trigger("change");
 }
@@ -431,6 +472,7 @@ function profileTable() {
     c += '<tr><td>{0}</td><td><input type="text" name="flttg"/> {1}</td></tr>'.format(MSG_FLEET_TAG, MSG_LEAVE_EMPTY_HINT);
     c += '<tr><td>{0}</td><td><select name="ntrytyp"></select> <select name="qdtyp"></select></td></tr>'.format(MSG_ENTRY_TYPE);
     c += '<tr><td></td><td><input type="checkbox" name="chktrn" id="chktrn"/> <label for="chktrn">{0}</label></td></tr>'.format(MSG_ACTIVATE_TARN);
+    c += '<tr><td></td><td><input type="checkbox" name="chkcw" id="chkcw"/> <label for="chkcw">{0}</label></td></tr>'.format(MSG_CLANWACHE_PROFIL);
     c += '<tr><td></td><td><input type="checkbox" name="chkgnr" id="chkgnr"/> <label for="chkgnr">{0}</label></td></tr>'.format(MSG_IGNORE_PROFILE);
     c += '<tr><td></td><td><input type="button" name="svprlf" value="{0}"/> <input type="button" name="rmprlf" value="{1}"/></td></tr>'.format(MSG_SAVE_PROFILE, MSG_REMOVE_PROFILE);
     c += '</table>';
@@ -462,14 +504,15 @@ function addProfile(name) {
         throw MSG_PROFILE_EXISTS.format(name);
     }
     profiles[name] = {
-        ids      : [],
-        name     : "",
-        password : "",
-        tag      : "",
-        entry    : ENTRY_PORTAL,
-        quad     : QUAD_NEW_HOPE_19_28,
-        tarn     : true,
-        ignore   : false
+        ids         : [],
+        name        : "",
+        password    : "",
+        tag         : "",
+        entry       : ENTRY_PORTAL,
+        quad        : QUAD_NEW_HOPE_19_28,
+        tarn        : true,
+        isClanwache : false,
+        ignore      : false
     };
     storeProfiles(profiles);
 }
@@ -697,6 +740,31 @@ function selectProfile(profile, check, action) {
         $('input[name="flstl"]').prop("checked", true);
     }
 }
+
+// Checks whether given id occurs in a 'Clanwache' profile
+function isInCwProfile(id) {
+    var result = false;
+    $.each(getProfiles(), function(name, profile) {
+        if (profile.isClanwache && containsShip(profile, id)) {
+            result = true;
+            return false; // abort loop
+        }
+    });
+    return result;
+}
+// Checks whether the given profile contains a ship with given id
+function containsShip(profile, id) {
+    if (typeof id == "string") {
+        id = parseInt(id, 10);
+    }
+    for (i = 0; i < profile.ids.length; ++i) {
+        var shipId = profile.ids[i];
+        if (shipId === id) {
+            return true;
+        }
+    }
+    return false;
+}
 // Whether the given name is the default profile
 function isDefault(profileName) {
     return profileName === getDefaultProfileName();
@@ -729,6 +797,13 @@ function selectProfileByName(name, check, action) {
 // whether to initially select best matching profile
 function enableAutoSelectProfile() {
     return true;
+}
+// Whether  clanwache mode is activated
+function isCwModeEnabled() {
+    return GM_getValue(PROPERTY_CW_MODE_ENABLED, true);
+}
+function setCwModeEnabled(enabled) {
+    GM_setValue(PROPERTY_CW_MODE_ENABLED, enabled);
 }
 // rounds a number to the specified amount of digits
 function roundn(num, dig) {
