@@ -36,7 +36,7 @@
 
 /* 
 Changelog
-[ CURRENT ] Version 1.9.0 - [TODO]
+[ CURRENT ] Version 1.9.0 - 23.02.2015
   Feature:
    + Add training mode
    + Adjust Fleet Tag
