@@ -7,6 +7,8 @@
 // @grant 	    GM_deleteValue
 // @grant 	    GM_info
 // @grant 	    GM_xmlhttpRequest
+// @downloadURL https://github.com/skuzzle/scriptz/raw/master/revorix/fleetcontrol/fleetcontrol.user.js
+// @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/fleetcontrol/fleetcontrol.user.js
 // @require     http://code.jquery.com/jquery-1.10.2.min.js
 // @include     http://www.revorix.info/*/map*
 // @include     http://www.revorix.info/*/rx.php?set=5*
