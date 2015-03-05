@@ -92,8 +92,9 @@ function registerKeyEventHandler() {
 }
 
 function handleKeyEvent(event) {
-    event.preventDefault();
-    if (FLEET_ID === "undefined") {
+    if (event.target.nodeName.toLowerCase() == "input") {
+        return;
+    } else if (FLEET_ID === "undefined") {
         return;
     }
 
@@ -101,6 +102,7 @@ function handleKeyEvent(event) {
     var character = String.fromCharCode(event.which);
     var link = KEY_MAP[character];
     if (link != undefined) {
+        //event.preventDefault();
         navigateTo(link.format(FLEET_ID));
         return;
     }
@@ -110,6 +112,7 @@ function handleKeyEvent(event) {
     if (dir === "undefined") {
         return;
     }
+    //event.preventDefault();
     navigateTo(MOVE_LINK.format(FLEET_ID, dir));
 }
 
