@@ -2,13 +2,13 @@
 // @name        RX Flottensteuerung
 // @namespace   projectpolly.de
 // @version     0.1.0-alpha
-// @grant 	    GM_setValue
-// @grant 	    GM_getValue
+// @grant       GM_getValue
 // @downloadURL https://github.com/skuzzle/scriptz/raw/master/revorix/fleetcontrol/fleetcontrol.user.js
 // @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/fleetcontrol/fleetcontrol.user.js
 // @require     http://code.jquery.com/jquery-1.10.2.min.js
 // @include     http://www.revorix.info/*/map*
-// @include     http://www.revorix.info/*/rx.php?set=5*
+// @include     http://www.revorix.info/*/rx.php?set=4&fid=*
+// @include     http://www.revorix.info/*/rx.php?set=5&fid=*
 // ==/UserScript==
 
 // Arrows
@@ -39,21 +39,21 @@ var QUAD_JUMP_LINK = "http://www.revorix.info/php/map_qspr.php?fid={0}";
 var RETURN_LINK    = "http://www.revorix.info/php/map_rueck.php?fid={0}";
 var FUEL_LINK      = "http://www.revorix.info/php/map_ftank.php?fid={0}";
 var HAND_OVER_LINK = "http://www.revorix.info/php/map_fgive.php?fid={0}";
+var GUARD_LINK     = "http://www.revorix.info/php/map_wache.php?fid={0}";
 
 // Action mapping
 var KEY_MAP = {
     a: ATTACK_LINK,
     f: CARGO_LINK,
-    t: TARN_LINK,
     s: SPLIT_LINK,
     q: QUAD_JUMP_LINK,
     r: RETURN_LINK,
     t: FUEL_LINK,
     v: JOIN_LINK,
-    u: HAND_OVER_LINK
+    u: HAND_OVER_LINK,
+    b: GUARD_LINK
 }
 
-var PROPERTY_FLEET_ID = "polly.move.fleetid";
 
 //Strings
 //from: http://stackoverflow.com/questions/610406/javascript-equivalent-to-printf-string-format
@@ -68,23 +68,19 @@ if (!String.prototype.format) {
 
 $(document).ready(main);
 
+var FLEET_ID = "undefined";
 function main() {
     var uri = document.baseURI;
-
-    if (uri.indexOf("map") != -1) {
-        mapIntegration();
-    } else if (uri.indexOf("rx.php?set=5") != -1) {
-        storeFleetId(uri);
-    }
+    FLEET_ID = storeFleetId(uri);
+    mapIntegration();
 }
 
+var FLEET_ID_REGEX = /fid=(\d+)/;
 function storeFleetId(uri) {
-    var fid = "fid=";
-    var i = uri.lastIndexOf(fid);
-    if (i >= 0) {
-        var id = uri.substr(i + fid.length);
-        GM_setValue(PROPERTY_FLEET_ID, id);
+    if (FLEET_ID_REGEX.test(uri)) {
+        return RegExp.$1;
     }
+    return "undefined";
 }
 
 function mapIntegration() {
@@ -96,8 +92,8 @@ function registerKeyEventHandler() {
 }
 
 function handleKeyEvent(event) {
-    var fid = GM_getValue(PROPERTY_FLEET_ID, "undefined");
-    if (fid === "undefined") {
+    event.preventDefault();
+    if (FLEET_ID === "undefined") {
         return;
     }
 
@@ -105,8 +101,7 @@ function handleKeyEvent(event) {
     var character = String.fromCharCode(event.which);
     var link = KEY_MAP[character];
     if (link != undefined) {
-        event.preventDefault();
-        navigateTo(link.format(fid));
+        navigateTo(link.format(FLEET_ID));
         return;
     }
     
@@ -115,12 +110,25 @@ function handleKeyEvent(event) {
     if (dir === "undefined") {
         return;
     }
-    event.preventDefault();
-    navigateTo(MOVE_LINK.format(fid, dir));
+    navigateTo(MOVE_LINK.format(FLEET_ID, dir));
 }
 
 function navigateTo(url) {
-    document.location.href = url;
+
+    var a = document.createElement('a');
+    a.href = url;
+    a.target = "rxqb";
+    fireClickEvent(a);
+}
+
+function fireClickEvent(element) {
+    var evt = new window.MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true
+    });
+
+    element.dispatchEvent(evt);
 }
 
 function getDir(which, keyCode) {
