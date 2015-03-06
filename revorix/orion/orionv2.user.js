@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.10.0
+// @version     1.10.1
 // @description Polly Revorix Integration
-// @grant         GM_setValue
-// @grant         GM_getValue
-// @grant         GM_deleteValue
-// @grant         GM_info
-// @grant         GM_xmlhttpRequest
+// @grant       GM_setValue
+// @grant       GM_getValue
+// @grant       GM_deleteValue
+// @grant       GM_info
+// @grant       GM_xmlhttpRequest
 // @downloadURL https://github.com/skuzzle/scriptz/raw/master/revorix/orion/orionv2.user.js
 // @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/orion/orionv2.user.js
 // @namespace   projectpolly.de
@@ -34,7 +34,12 @@
 
 /*
 Changelog
-    [ CURRENT ] Version 1.10.0 - 06.03.2015
+    [ CURRENT ] Version 1.10.1 - 06.03.2015
+        + Auto-Slurp innerhalb des Laderaums (de)aktivierbar
+        + 'Zuück zur Karte' Funktion nach dem beladen von Schiffen
+        + Verbessertes Layout in der Frachtraum Ansicht
+
+     Version 1.10.0 - 06.03.2015
         + Laderaum Integration
 
     Version 1.9.0 - 23.02.2015
@@ -154,12 +159,13 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
+CHANGELOG['1.10.1'] = "* Auto-Slurp innerhalb des Laderaums (de)aktivierbar.\n* 'Zuück zur Karte' Funktion nach dem beladen von Schiffen.\n* Verbessertes Layout in der Frachtraum Ansicht.";
 CHANGELOG['1.10.0'] = "* Button zum einfachen Einladen von Resourcen hinzugefügt.\n* Auto-Slurp: Resourcen automatisch auf Schiffe verteilen wenn der Frachtraum aufgerufen wird.";
-CHANGELOG['1.9.0'] = "* Modus zum sicheren trainieren von Schiffen hinzugefügt (Beta).\n* Erkennung der Clanwache an den neuen Flotten-Tag angepasst.";
-CHANGELOG['1.8.6'] = "* In der Karte wird ein Link zur Quadranten Heatmap angezeigt.";
-CHANGELOG['1.8.5'] = "* Changelog aller Versionen wird in den Rx Einstellungen angezeigt.\n* Opt-in für Deaktivierung des Login Buttons.";
-CHANGELOG['1.8.4'] = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
-CHANGELOG['1.8.3'] = "* Neue Einstellungen: Soll Login Button deaktiviert werden bis der korrekte Code eingegeben wurde?\n* Bug-Fix beim Logincode handling.\n* Benachrichtigung wenn das Script aktualisiert wurde.\n* Orion Script Version wird in den Rx Einstellungen angezeigt.";
+CHANGELOG['1.9.0']  = "* Modus zum sicheren trainieren von Schiffen hinzugefügt (Beta).\n* Erkennung der Clanwache an den neuen Flotten-Tag angepasst.";
+CHANGELOG['1.8.6']  = "* In der Karte wird ein Link zur Quadranten Heatmap angezeigt.";
+CHANGELOG['1.8.5']  = "* Changelog aller Versionen wird in den Rx Einstellungen angezeigt.\n* Opt-in für Deaktivierung des Login Buttons.";
+CHANGELOG['1.8.4']  = "* Hot-Fix: Changelog darf nur ein mal angezeigt werden.";
+CHANGELOG['1.8.3']  = "* Neue Einstellungen: Soll Login Button deaktiviert werden bis der korrekte Code eingegeben wurde?\n* Bug-Fix beim Logincode handling.\n* Benachrichtigung wenn das Script aktualisiert wurde.\n* Orion Script Version wird in den Rx Einstellungen angezeigt.";
 
 //API URLs
 var POLLY_URL = LOCAL_SERVER ? "https://localhost:83" : "https://projectpolly.de:443";
@@ -218,6 +224,7 @@ var PROPERTY_DISABLE_LOGIN_BUTTON = "polly.orion.disableLogin";
 var PROPERTY_LAST_SECTOR_JSON = "polly.orion.lastSecotJson";
 var PROPERTY_RESOURCE_ORDER = "polly.orion.resourceOrder";
 var PROPERTY_AUTO_SLURP = "polly.orion.autoSlurp";
+var PROPERTY_BACK_TO_MAP = "polly.orion.backToMap";
 
 var PROPERTY_PREVIOUS_VERSION = "polly.orion.prevVersion";
 
@@ -323,7 +330,8 @@ var MSG_NO_RESOURCE = "'{0}' ist kein gültiges Ressourcen Kürzel";
 var MSG_UNLOAD = "Entladen";
 var MSG_LOAD = "Einladen";
 var MSG_LOAD_HALF = "Hälfte einladen";
-var MSG_AUTO_SLURP = "Frachtraum: Resourcen automatisch auf Schiffe verteilen (Auto-Slurp)";
+var MSG_AUTO_SLURP = "Resourcen automatisch auf Schiffe verteilen (Auto-Slurp)";
+var MSG_BACK_TO_MAP = "Nach dem Einladen zurück zur Karte";
 
 //Default clan tag
 var CLAN_TAG = "[Loki]";
@@ -526,13 +534,24 @@ function cargoIntegration() {
     injectGlobal(loadx);
 
     var zuladenBtn = $("input[name='senden']");
-    var html = "<p style='margin: 5px;'>";
-    html += '<input type="button" class="button" value="{0}" id="unpackage"/>'.format(MSG_UNLOAD);
-    html += '<input type="button" class="button" value="{0}" id="package"/>'.format(MSG_LOAD);
-    html += '<input type="button" class="button" value="{0}" id="packageHalf"/>'.format(MSG_LOAD_HALF);
-    html += "</p>";
+    var settingsHtml = "";
+    settingsHtml += '<input type="checkbox" id="autoSlurp" name="autoSlurp"/><label for="autoSlurp">{0}</label><br/>'.format(MSG_AUTO_SLURP);
+    settingsHtml += '<input type="checkbox" id="backToMap" name="backToMap"/><label for="backToMap">{0}</label><br/>'.format(MSG_BACK_TO_MAP);
+    var html = "";
+    html += '<input type="button" class="button" value="{0}" id="unpackage"/> '.format(MSG_UNLOAD);
+    html += '<input type="button" class="button" value="{0}" id="package"/> '.format(MSG_LOAD);
+    html += '<input type="button" class="button" value="{0}" id="packageHalf"/><br/>'.format(MSG_LOAD_HALF);
 
-    zuladenBtn.before(html);
+    zuladenBtn.parents("td").before('<td>'+settingsHtml+'</td><td>'+html+'</td>');
+    
+    $("#autoSlurp").attr("checked", isAutoSlurp()).change(function() {
+        var auto = $(this).is(":checked");
+        setAutoSlurp(auto);
+    });
+    $("#backToMap").attr("checked", isBackToMap()).change(function() {
+        var back = $(this).is(":checked");
+        setBackToMap(back);
+    });
     
     $("#unpackage").click(function() {
         exec(unloadRess);
@@ -540,12 +559,18 @@ function cargoIntegration() {
     
     $("#package").click(function() {
         exec(function() { loadx(1); });
+        if (isBackToMap()) {
+            $("input[name='senden_map']").click();
+        }
     });
     $("#packageHalf").click(function() {
         exec(function() { loadx(2); });
+        if (isBackToMap()) {
+            $("input[name='senden_map']").click();
+        }
     });
     if (isAutoSlurp()) {
-        $("#package").click();
+        exec(function() { loadx(1); });
     }
 }
 
@@ -2473,6 +2498,13 @@ function isAutoSlurp() {
     return GM_getValue(PROPERTY_AUTO_SLURP, false);
 }
 
+function isBackToMap() {
+    return GM_getValue(PROPERTY_BACK_TO_MAP, false);
+}
+function setBackToMap(backToMap) {
+    GM_setValue(PROPERTY_BACK_TO_MAP, backToMap);
+}
+
 // set resource order as string
 function setResOrder(order) {
     var arr = order.split(",");
@@ -2642,11 +2674,6 @@ function exec(fn) {
     script.textContent = '(' + fn + ')();';
     document.body.appendChild(script); // run the script
     document.body.removeChild(script); // clean up
-}
-
-function injectX(x) {
-    var script = 'function getX() { return ' + x + '; }';
-    injectGlobal(script);
 }
 
 function injectGlobal(fn) {
