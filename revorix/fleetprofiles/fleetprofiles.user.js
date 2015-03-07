@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        RX Flottenprofile
-// @version     0.4
+// @version     0.4.1
 // @description Verwalten von verschiedenen Flottenprofilen
 // @grant       GM_setValue
 // @grant       GM_getValue
@@ -16,23 +16,25 @@
 
 /* 
 Changelog
+Version 0.4.1 - 07.03.2015
+    + Improve rounding of selection ratio
+
 Version 0.4 - 28.02.2015
-    Features:
-        + Add 'Clanwache' Feature
+    + Add 'Clanwache' Feature
+    
 Version 0.3 - 20.02.2015
-    Features:
-        + Add default profile
-        + Do not modify fleet name etc. when adding/removing ships (in Ship Portal)
+    + Add default profile
+    + Do not modify fleet name etc. when adding/removing ships (in Ship Portal)
+    
 Version 0.2 - 31.12.2014
-    Features:
-        + Add buttons to add/remove ships to current selection
-        + Remember the last edited profile
-        + Fix display bug if no matching ships are available
+    + Add buttons to add/remove ships to current selection
+    + Remember the last edited profile
+    + Fix display bug if no matching ships are available
+
 Version 0.1 - 16.05.2014
-    Features:
-        + GUI to add/modify and delete fleet profiles
-        + Automatically chose best matching fleet profile
-        + Manually chose different profile if needed
+    + GUI to add/modify and delete fleet profiles
+    + Automatically chose best matching fleet profile
+    + Manually chose different profile if needed
 */
 
 
@@ -584,7 +586,7 @@ function portalGui(bestMatch) {
         if (matches !== 0) {
             prf += '</a>'; 
         }
-        prf += ' (' + matches + "/"+ v.ids.length +", "+ (ratio*100.0)+ '%)';
+        prf += ' (' + matches + "/"+ v.ids.length +", "+ roundn(ratio*100.0,2)+ '%)';
         if (v == bestMatch.best && bestMatch.matches[k] != undefined) {
             prf += " &lt;-";
         }
