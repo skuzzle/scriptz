@@ -9,6 +9,9 @@
 // @include     http://www.revorix.info/*/map*
 // @include     http://www.revorix.info/*/rx.php?set=4&fid=*
 // @include     http://www.revorix.info/*/rx.php?set=5&fid=*
+// @include     http://87.106.151.92/*/map*
+// @include     http://87.106.151.92/*/rx.php?set=4&fid=*
+// @include     http://87.106.151.92/*/rx.php?set=5&fid=*
 // ==/UserScript==
 
 

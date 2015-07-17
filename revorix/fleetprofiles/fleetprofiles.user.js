@@ -11,6 +11,8 @@
 // @require     http://code.jquery.com/jquery-1.10.2.min.js
 // @include     http://www.revorix.info/php/schiff_portal.php*
 // @include     http://www.revorix.info/php/schiff_list.php*
+// @include     http://87.106.151.92/*/schiff_portal.php*
+// @include     http://87.106.151.92/*/schiff_list.php*
 // ==/UserScript==
 
 
