@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name        RX Flottensteuerung
 // @namespace   projectpolly.de
-// @version     0.1.0-alpha
+// @version     0.2.0
 // @grant       GM_getValue
 // @downloadURL https://github.com/skuzzle/scriptz/raw/master/revorix/fleetcontrol/fleetcontrol.user.js
 // @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/fleetcontrol/fleetcontrol.user.js
