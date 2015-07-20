@@ -16,18 +16,18 @@
 // ==/UserScript==
 
 
-/* 
+/*
 Changelog
 Version 0.4.1 - 07.03.2015
     + Improve rounding of selection ratio
 
 Version 0.4 - 28.02.2015
     + Add 'Clanwache' Feature
-    
+
 Version 0.3 - 20.02.2015
     + Add default profile
     + Do not modify fleet name etc. when adding/removing ships (in Ship Portal)
-    
+
 Version 0.2 - 31.12.2014
     + Add buttons to add/remove ships to current selection
     + Remember the last edited profile
@@ -54,7 +54,7 @@ var ENTRY_TYPES      = [
 ];
 
 
-// Possible types for the 'quad' field in a profile when 'entry' is 
+// Possible types for the 'quad' field in a profile when 'entry' is
 // set to ENTRY_PORTAL. DO NOT MODIFY THESE VALUES
 var QUAD_JERICHO_21_9        = 50675;
 var QUAD_JERICHO_15_11       = 50709;
@@ -144,7 +144,7 @@ $(window).load(main);
 
 function main() {
     var uri = document.baseURI;
-    
+
     if (uri.indexOf("schiff_portal") != -1) {
         portalIntegration();
     } else if (uri.indexOf("schiff_list") != -1) {
@@ -178,7 +178,7 @@ function shipListGui() {
     c += '</tbody>';
     c += '</table>';
     $(tbl).after(c);
-    
+
     $('input[name="ddprfl"]').click(handleAddProfile);
     $('input[name="svprlf"]').click(handleSaveProfile);
     $('input[name="rmprlf"]').click(handleRemoveProfile);
@@ -239,7 +239,7 @@ function adjustShipTable() {
     bfr = '<div style="margin-bottom: 10px" class="wrpd fulL"><input type="checkbox" id="enable"/><label for="enable">{1}</label> <span class="profile" style="margin-left:15px">{0} </span><select class="profile" id="profilesTop"></select> <a href="#" id="toggleDefault" style="display:none"></a><div style="float:right"><input type="checkbox" id="cwMode"/><label for="cwMode">{2}</label></div></div>'.format(MSG_PROFILE, MSG_ENABLE_PROFILES, MSG_ENABLE_CW_MODE);
     table.before(bfr);
     table.attr("id", "shipTable");
-    
+
     $("#enable").prop("checked", getEnableProfiles());
     $("#enable").change(function() {
         var enable =  $(this).is(":checked");
@@ -254,7 +254,7 @@ function adjustShipTable() {
             resetColors();
         }
     });
-    
+
     // CW Mode
     $("#cwMode").prop("checked", isCwModeEnabled());
     $("#cwMode").change(function() {
@@ -300,7 +300,7 @@ function adjustShipTable() {
         var id = idFromTd(ftd);
         $(this).append('<td class="profile" style="text-align:center"><a href="#" shipid="{1}" class="addTo" title="{3}">+++</a><a href="#" shipid="{1}" class="removeFrom" title="{4}">---</a></td>'.format(MSG_ADD_SHORT, id, MSG_REMOVE_SHORT, MSG_ADD_TO, MSG_REMOVE_FROM));
     });
-    
+
     $(".addTo").click(function() {
         var name = $("#profilesTop").val();
         var profile = getProfiles()[name];
@@ -313,7 +313,7 @@ function adjustShipTable() {
         var name = $("#profilesTop").val();
         var profile = getProfiles()[name];
         var shipId = parseInt($(this).attr("shipid"), 10);
-        
+
         removeShip(profile, shipId);
         colorShips(profile);
         hideShowButtons(profile);
@@ -330,7 +330,7 @@ function adjustShipTable() {
         $("#profilesTop").val(getLastSelectedProfileName());
         toggleDefaultLink(name);
     });
-    
+
     $("#profilesTop").trigger("change");
     $("#enable").trigger("change");
     $("#cwMode").trigger("change");
@@ -424,7 +424,7 @@ function hideShowButtons(profile) {
 function showProfile(name, profile) {
     var entryTypeSelect = $('select[name="ntrytyp"]');
     var quadTypeSelect = $('select[name="qdtyp"]');
-    
+
     // fill select input with different entry types
     var opt = "";
     $.each(ENTRY_TYPES, function(idx) {
@@ -433,7 +433,7 @@ function showProfile(name, profile) {
     });
     entryTypeSelect.html(opt);
     entryTypeSelect.val(profile["entry"]);
-    
+
     // change handler to show/hide the quad selector
     entryTypeSelect.change(function() {
         var val = parseInt($(this).val(), 10);
@@ -586,7 +586,7 @@ function portalGui(bestMatch) {
         }
         prf += display;
         if (matches !== 0) {
-            prf += '</a>'; 
+            prf += '</a>';
         }
         prf += ' (' + matches + "/"+ v.ids.length +", "+ roundn(ratio*100.0,2)+ '%)';
         if (v == bestMatch.best && bestMatch.matches[k] != undefined) {
@@ -603,7 +603,7 @@ function portalGui(bestMatch) {
 function profileClick() {
     var name = $(this).attr("name");
     var action = $(this).attr("action");
-    
+
     var check = TOGGLE[name] == undefined ? true : TOGGLE[name];
     $.each(getProfiles(), function (k, v) {
         if (v.ignore) { return true; }
@@ -630,7 +630,7 @@ function findBestMatchingProfile() {
         $.each(getProfiles(), function (k, v) {
             if (v.ignore) { return true; }
 
-            if (ret.matches[k] == undefined) { 
+            if (ret.matches[k] == undefined) {
                 ret.matches[k] = 0;
             }
             $.each(v.ids, function (idx) {
@@ -640,21 +640,21 @@ function findBestMatchingProfile() {
             });
         });
     });
-    
+
     // select profile with best matches to ship count ratio (or default profile)
-    
+
     $.each(getProfiles(), function (k, v) {
         // XXX: ignores default profile too!
         if (v.ignore) { return true; }
-        
-        if (ret.best === null) { 
-            ret.best = v; 
+
+        if (ret.best === null) {
+            ret.best = v;
             ret.name = k;
         }
-        
+
         var cRatio = calcRatio(k, v, ret.matches[k]);
         var bRatio = calcRatio(ret.name, ret.best, ret.matches[ret.name]);
-        
+
         if (cRatio >= bRatio) {
             ret.best = v;
             ret.name = k;
@@ -686,16 +686,16 @@ function selectProfile(profile, check, action) {
             this.checked = isInProfile ? false : this.checked;
         }
     });
-       
+
     // trigger recalculation of admiralität
     ships.first().trigger("click");
     ships.first().trigger("click");
-    
+
     if (action !== "toggle") {
         // do not modify fleet settings if ships are added/removed
         return;
     }
-    
+
     // set fleet name if specified in profile
     if (check && profile["name"] != undefined && profile["name"] != "") {
         $('input[name="fname"]').val(profile["name"]);
@@ -703,7 +703,7 @@ function selectProfile(profile, check, action) {
         // set name to the rx generated one
         $('input[name="fname"]').val(RX_FLEET_NAME);
     }
-    
+
     // set fleet tag if specified
     if (check && profile["tag"] != undefined) {
         $('input[name="ftg"]').val(profile["tag"]);
@@ -711,19 +711,19 @@ function selectProfile(profile, check, action) {
         // reset tag if none was specified
         $('input[name="ftg"]').val("");
     }
-    
+
     // set fleet pw if specified
     if (check && profile["password"] != undefined) {
         $('input[name="anschluss"]').val(profile["password"]);
     } else {
         $('input[name="anschluss"]').val("");
     }
-    
+
     // set entry point
     if (profile["entry"] != undefined) {
         var e = profile["entry"];
         $('input[name="sptr"][value="'+e+'"]').prop("checked", true);
-    
+
         var sl = $('select[name="fport"]');
         sl.prop("disabled", e != ENTRY_PORTAL);
         if (e == ENTRY_PORTAL) {
@@ -735,7 +735,7 @@ function selectProfile(profile, check, action) {
             }
         }
     }
-    
+
     // set tarn
     if (check && profile["tarn"] != undefined) {
         $('input[name="flstl"]').prop("checked", profile["tarn"]);
@@ -777,7 +777,7 @@ function isDefault(profileName) {
 function getDefaultProfileName() {
     return GM_getValue(PROPERTY_DEFAULT_PROFILE, "");
 }
-// Sets the default profile name 
+// Sets the default profile name
 function setDefaultProfile(profileName) {
     GM_setValue(PROPERTY_DEFAULT_PROFILE, profileName);
 }
