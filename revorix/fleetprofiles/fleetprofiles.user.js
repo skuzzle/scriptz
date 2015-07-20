@@ -586,7 +586,7 @@ function portalGui(bestMatch) {
         var ratio = roundn(matches / v.ids.length, 2);
         var display = isDefault(k) ? k+" (S)" : k;
         if (matches !== 0) {
-            prf += '<a class="prfllnk" action="add" href="#" name="{0}" title="{1}">+++</a> <a class="prfllnk" action="remove" href="#" name="{0}" title="{2}">---</a> '.format(k, MSG_TITLE_ADD, MSG_TITLE_TOGGLE);
+            prf += '<a class="prfllnk" action="add" href="#" name="{0}" title="{1}">+++</a> <a class="prfllnk" action="remove" href="#" name="{0}" title="{2}">---</a> '.format(k, MSG_TITLE_ADD, MSG_TITLE_REMOVE);
             prf += '<a class="prfllnk" action="toggle" href="#" name="{0}" title="{1}">'.format(k, MSG_TITLE_TOGGLE);
         }
         prf += display;
