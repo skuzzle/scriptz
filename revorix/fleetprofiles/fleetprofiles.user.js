@@ -301,25 +301,30 @@ function adjustShipTable() {
         $(this).append('<td class="profile" style="text-align:center"><a href="#" shipid="{1}" class="addTo" title="{3}">+++</a><a href="#" shipid="{1}" class="removeFrom" title="{4}">---</a></td>'.format(MSG_ADD_SHORT, id, MSG_REMOVE_SHORT, MSG_ADD_TO, MSG_REMOVE_FROM));
     });
 
-    $(".addTo").click(function() {
-        var name = $("#profilesTop").val();
-        var profile = getProfiles()[name];
-        var shipId = parseInt($(this).attr("shipid"), 10);
-        addShip(profile, shipId);
-        colorShips(profile);
-        hideShowButtons(profile);
-    });
-    $(".removeFrom").click(function() {
+    $(".addTo").click(function(evt) {
         var name = $("#profilesTop").val();
         var profile = getProfiles()[name];
         var shipId = parseInt($(this).attr("shipid"), 10);
 
+        evt.preventDefault();
+        addShip(profile, shipId);
+        colorShips(profile);
+        hideShowButtons(profile);
+    });
+    $(".removeFrom").click(function(evt) {
+        var name = $("#profilesTop").val();
+        var profile = getProfiles()[name];
+        var shipId = parseInt($(this).attr("shipid"), 10);
+
+        evt.preventDefault();
         removeShip(profile, shipId);
         colorShips(profile);
         hideShowButtons(profile);
     });
-    $("#toggleDefault").click(function() {
+    $("#toggleDefault").click(function(evt) {
         var name = $("#profilesTop").val();
+
+        evt.preventDefault();
         if (isDefault(name)) {
             // Remove default profile
             setDefaultProfile("");
@@ -600,11 +605,12 @@ function portalGui(bestMatch) {
 }
 
 // loads a profile if its link was clicked
-function profileClick() {
+function profileClick(evt) {
     var name = $(this).attr("name");
     var action = $(this).attr("action");
-
     var check = TOGGLE[name] == undefined ? true : TOGGLE[name];
+
+    evt.preventDefault();
     $.each(getProfiles(), function (k, v) {
         if (v.ignore) { return true; }
         TOGGLE[k] = true;
