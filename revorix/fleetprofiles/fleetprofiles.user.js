@@ -298,7 +298,7 @@ function adjustShipTable() {
     table.find("tr:nth-child(n+3)").each(function() {
         var ftd = $(this).find("td:nth-child(1)").first();
         var id = idFromTd(ftd);
-        $(this).append('<td class="profile" style="text-align:center"><a href="#" shipid="{1}" class="addTo" title="{3}">+++</a><a href="#" shipid="{1}" class="removeFrom" title="{4}">---</a></td>'.format(MSG_ADD_SHORT, id, MSG_REMOVE_SHORT, MSG_ADD_TO, MSG_REMOVE_FROM));
+        $(this).append('<td class="profile" style="text-align:center"><a href="#" shipid="{1}" class="addTo" title="{3}">+++</a><a href="#" shipid="{1}" class="removeFrom" title="{4}">&minus;&minus;&minus;</a></td>'.format(MSG_ADD_SHORT, id, MSG_REMOVE_SHORT, MSG_ADD_TO, MSG_REMOVE_FROM));
     });
 
     $(".addTo").click(function(evt) {
@@ -586,7 +586,7 @@ function portalGui(bestMatch) {
         var ratio = roundn(matches / v.ids.length, 2);
         var display = isDefault(k) ? k+" (S)" : k;
         if (matches !== 0) {
-            prf += '<a class="prfllnk" action="add" href="#" name="{0}" title="{1}">+++</a> <a class="prfllnk" action="remove" href="#" name="{0}" title="{2}">---</a> '.format(k, MSG_TITLE_ADD, MSG_TITLE_REMOVE);
+            prf += '<a class="prfllnk" action="add" href="#" name="{0}" title="{1}">+++</a> <a class="prfllnk" action="remove" href="#" name="{0}" title="{2}">&minus;&minus;&minus;</a> '.format(k, MSG_TITLE_ADD, MSG_TITLE_REMOVE);
             prf += '<a class="prfllnk" action="toggle" href="#" name="{0}" title="{1}">'.format(k, MSG_TITLE_TOGGLE);
         }
         prf += display;
