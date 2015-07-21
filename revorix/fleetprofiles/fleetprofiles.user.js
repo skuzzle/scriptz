@@ -19,6 +19,7 @@
 /*
 Changelog
 Version 0.5.0 - TODO
+    + Automatically select newly created profile for editing
     + Do not jump to top of page when adding ships
     + Minor beautifications
 
@@ -99,6 +100,7 @@ var MSG_PROFILE_MANAGER = "Profil Manager";
 var MSG_NEW_PROFILE = "Neues Profil";
 var MSG_ADD = "Hinzufügen";
 var MSG_ADD_SHORT = "+";
+var MSG_ADDED = "Profil '{0}' hinzugefügt."
 var MSG_REMOVE_SHORT = "-";
 var MSG_LIST_PROFILES = "Profile:";
 var MSG_PROFILE = "Profil";
@@ -191,11 +193,15 @@ function shipListGui() {
 
 // handles click of Add Profile button
 function handleAddProfile() {
-    var name = $('input[name="nwprflnm"]').val();
+    var inp = $('input[name="nwprflnm"]')
+    var name = inp.val();
     try {
         addProfile(name);
+        inp.val("");
         $("#profilesTop").append('<option value="{0}">{0}</option>'.format(name));
+        $("#profilesTop").val(name);
         $("#profilesTop").trigger("change");
+        alert(MSG_ADDED.format(name));
     } catch (e) {
         alert(e);
         return;
@@ -274,7 +280,6 @@ function adjustShipTable() {
             return;
         }
         var name = $(this).val();
-        var profiles = getProfiles();
 
         if (name === null) {
             // no profiles exist
@@ -292,7 +297,6 @@ function adjustShipTable() {
             showProfile(name, profile);
             toggleDefaultLink(name);
         }
-
     });
 
     var name = $("#profilesTop").val();
