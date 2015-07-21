@@ -18,6 +18,10 @@
 
 /*
 Changelog
+Version 0.5.0 - TODO
+    + Do not jump to top of page when adding ships
+    + Minor beautifications
+
 Version 0.4.1 - 07.03.2015
     + Improve rounding of selection ratio
 
