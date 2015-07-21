@@ -250,8 +250,8 @@ function adjustShipTable() {
     var profiles = getProfiles();
 
     var bfr = "";
-    bfr = '<div style="margin-bottom: 10px" class="wrpd fulL"><input type="checkbox" id="enable"/><label for="enable">{1}</label> <span class="profile" style="margin-left:15px">{0} </span><select class="profile" id="profilesTop"></select> <a href="#" id="toggleDefault" style="display:none"></a><div style="float:right"><input type="checkbox" id="cwMode"/><label for="cwMode">{2}</label></div></div>'.format(MSG_PROFILE, MSG_ENABLE_PROFILES, MSG_ENABLE_CW_MODE);
-    table.before(bfr);
+    bfr = '<tr><td><input type="checkbox" id="enable"/><label for="enable">{1}</label> <span class="profile" style="margin-left:15px">{0} </span><select class="profile" id="profilesTop"></select> <a href="#" id="toggleDefault" style="display:none"></a><div style="float:right"><input type="checkbox" id="cwMode"/><label for="cwMode">{2}</label></div></td></th>'.format(MSG_PROFILE, MSG_ENABLE_PROFILES, MSG_ENABLE_CW_MODE);
+    $('td[class="ce"]').parent().after(bfr);
     table.attr("id", "shipTable");
 
     $("#enable").prop("checked", getEnableProfiles());
