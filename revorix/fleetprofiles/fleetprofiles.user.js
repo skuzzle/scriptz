@@ -176,7 +176,7 @@ function shipListGui() {
     c += '</thead>';
     c += '<tbody>';
     c += '<tr><td>{0}</td>'.format(MSG_NEW_PROFILE);
-    c += '<td><input type="text" name="nwprflnm"/> <input type="button" value="{0}" name="ddprfl"/></td>'.format(MSG_ADD);
+    c += '<td><input type="text" name="nwprflnm" class="text"/> <input type="button" value="{0}" name="ddprfl" class="button"/></td>'.format(MSG_ADD);
     c += '</tr>';
     c += '<td></td>';
     c += '<td id="changeProfile">'+profileTable()+'</td>';
@@ -484,14 +484,14 @@ function profileTable() {
     var c = "";
     c += '<table id="editProfile" style="width:100%">';
     c += '<tr><td id="profileName" colspan="2">{0}</td></tr>';
-    c += '<tr><td>{0}</td><td><input type="text" name="fltnm"/> {1}</td></tr>'.format(MSG_FLEET_NAME, MSG_FLEET_NAME_HINT);
-    c += '<tr><td>{0}</td><td><input type="text" name="fltpw"/> {1}</td></tr>'.format(MSG_FLEET_PW, MSG_LEAVE_EMPTY_HINT);
-    c += '<tr><td>{0}</td><td><input type="text" name="flttg"/> {1}</td></tr>'.format(MSG_FLEET_TAG, MSG_LEAVE_EMPTY_HINT);
+    c += '<tr><td>{0}</td><td><input type="text" name="fltnm" class="text"/> {1}</td></tr>'.format(MSG_FLEET_NAME, MSG_FLEET_NAME_HINT);
+    c += '<tr><td>{0}</td><td><input type="text" name="fltpw" class="text"/> {1}</td></tr>'.format(MSG_FLEET_PW, MSG_LEAVE_EMPTY_HINT);
+    c += '<tr><td>{0}</td><td><input type="text" name="flttg" class="text"/> {1}</td></tr>'.format(MSG_FLEET_TAG, MSG_LEAVE_EMPTY_HINT);
     c += '<tr><td>{0}</td><td><select name="ntrytyp"></select> <select name="qdtyp"></select></td></tr>'.format(MSG_ENTRY_TYPE);
     c += '<tr><td></td><td><input type="checkbox" name="chktrn" id="chktrn"/> <label for="chktrn">{0}</label></td></tr>'.format(MSG_ACTIVATE_TARN);
     c += '<tr><td></td><td><input type="checkbox" name="chkcw" id="chkcw"/> <label for="chkcw">{0}</label></td></tr>'.format(MSG_CLANWACHE_PROFIL);
     c += '<tr><td></td><td><input type="checkbox" name="chkgnr" id="chkgnr"/> <label for="chkgnr">{0}</label></td></tr>'.format(MSG_IGNORE_PROFILE);
-    c += '<tr><td></td><td><input type="button" name="svprlf" value="{0}"/> <input type="button" name="rmprlf" value="{1}"/></td></tr>'.format(MSG_SAVE_PROFILE, MSG_REMOVE_PROFILE);
+    c += '<tr><td></td><td><input type="button" name="svprlf" value="{0}" class="button"/> <input type="button" name="rmprlf" value="{1}" class="button"/></td></tr>'.format(MSG_SAVE_PROFILE, MSG_REMOVE_PROFILE);
     c += '</table>';
     return c;
 }
