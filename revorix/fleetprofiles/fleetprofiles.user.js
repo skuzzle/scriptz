@@ -589,9 +589,10 @@ function portalIntegration() {
 
 
 function portalGui(bestMatch) {
-    $('table[class="full gnfo"] tr:nth-child(1)').append('<td class="gnfo"></td>');
+    $('table[class="full gnfo"] tr:nth-child(1) td').attr('colspan', '2');
     $('table[class="full gnfo"] tr:nth-child(2)').append('<td id="prfls"></td>');
-    $('table[class="full gnfo"] tr:nth-child(3)').append('<td class="gnfo"></td>');
+    $('table[class="full gnfo"] tr:nth-child(3) td').attr('colspan', '2');
+    $('table[class="full gnfo"]').attr( "class", "full wrpd" );
     var prf = "";
 
     $.each(getProfiles(), function (k, v) {
