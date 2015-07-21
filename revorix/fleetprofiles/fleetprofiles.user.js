@@ -170,7 +170,9 @@ function shipListGui() {
     var profiles = getProfiles();
     var tbl = findLastTable();
     var c = "";
-    c += '<table class="wrpd full profile" style="margin-top:10px";>';
+
+    c += '<br><div id="outerprofile" class="wrp ce"><div class="tl"><div class="tr"><div class="tc"></div></div></div><div class="ml"><div class="mr">';
+    c += '<table class="wrpd full profile">';
     c += '<thead>';
     c += '<tr><th colspan="2" class="nfo">{0}</th></tr>'.format(MSG_PROFILE_MANAGER);
     c += '</thead>';
@@ -183,7 +185,9 @@ function shipListGui() {
     c += '</tr>';
     c += '</tbody>';
     c += '</table>';
-    $(tbl).after(c);
+    c += '</div></div><div class="bl"><div class="br"><div class="bc"></div></div></div>';
+
+    $(tbl).parent().parent().next().after(c);
 
     $('input[name="ddprfl"]').click(handleAddProfile);
     $('input[name="svprlf"]').click(handleSaveProfile);
@@ -255,10 +259,12 @@ function adjustShipTable() {
         var enable =  $(this).is(":checked");
         GM_setValue(PROPERTY_ENABLE_PROFILES, enable);
         if (enable) {
+            $("#outerprofile").show();
             $(".profile").show();
             $("#toggleDefault").show();
             $("#profilesTop").trigger("change");
         } else {
+            $("#outerprofile").hide();
             $(".profile").hide();
             $("#toggleDefault").hide();
             resetColors();
