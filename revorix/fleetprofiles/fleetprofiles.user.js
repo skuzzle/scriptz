@@ -170,20 +170,24 @@ function shipListGui() {
     var profiles = getProfiles();
     var tbl = findLastTable();
     var c = "";
-    c += '<table class="wrpd full profile" style="margin-top:10px";>';
+
+    c += '<br><div id="outerprofile" class="wrp ce"><div class="tl"><div class="tr"><div class="tc"></div></div></div><div class="ml"><div class="mr">';
+    c += '<table class="wrpd full profile">';
     c += '<thead>';
     c += '<tr><th colspan="2" class="nfo">{0}</th></tr>'.format(MSG_PROFILE_MANAGER);
     c += '</thead>';
     c += '<tbody>';
     c += '<tr><td>{0}</td>'.format(MSG_NEW_PROFILE);
-    c += '<td><input type="text" name="nwprflnm"/> <input type="button" value="{0}" name="ddprfl"/></td>'.format(MSG_ADD);
+    c += '<td><input type="text" name="nwprflnm" class="text"/> <input type="button" value="{0}" name="ddprfl" class="button"/></td>'.format(MSG_ADD);
     c += '</tr>';
     c += '<td></td>';
     c += '<td id="changeProfile">'+profileTable()+'</td>';
     c += '</tr>';
     c += '</tbody>';
     c += '</table>';
-    $(tbl).after(c);
+    c += '</div></div><div class="bl"><div class="br"><div class="bc"></div></div></div>';
+
+    $(tbl).parent().parent().next().after(c);
 
     $('input[name="ddprfl"]').click(handleAddProfile);
     $('input[name="svprlf"]').click(handleSaveProfile);
@@ -246,8 +250,8 @@ function adjustShipTable() {
     var profiles = getProfiles();
 
     var bfr = "";
-    bfr = '<div style="margin-bottom: 10px" class="wrpd fulL"><input type="checkbox" id="enable"/><label for="enable">{1}</label> <span class="profile" style="margin-left:15px">{0} </span><select class="profile" id="profilesTop"></select> <a href="#" id="toggleDefault" style="display:none"></a><div style="float:right"><input type="checkbox" id="cwMode"/><label for="cwMode">{2}</label></div></div>'.format(MSG_PROFILE, MSG_ENABLE_PROFILES, MSG_ENABLE_CW_MODE);
-    table.before(bfr);
+    bfr = '<tr><td><input type="checkbox" id="enable"/><label for="enable">{1}</label> <span class="profile" style="margin-left:15px">{0} </span><select class="profile" id="profilesTop"></select> <a href="#" id="toggleDefault" style="display:none"></a><div style="float:right"><input type="checkbox" id="cwMode"/><label for="cwMode">{2}</label></div></td></th>'.format(MSG_PROFILE, MSG_ENABLE_PROFILES, MSG_ENABLE_CW_MODE);
+    $('td[class="ce"]').parent().after(bfr);
     table.attr("id", "shipTable");
 
     $("#enable").prop("checked", getEnableProfiles());
@@ -255,10 +259,12 @@ function adjustShipTable() {
         var enable =  $(this).is(":checked");
         GM_setValue(PROPERTY_ENABLE_PROFILES, enable);
         if (enable) {
+            $("#outerprofile").show();
             $(".profile").show();
             $("#toggleDefault").show();
             $("#profilesTop").trigger("change");
         } else {
+            $("#outerprofile").hide();
             $(".profile").hide();
             $("#toggleDefault").hide();
             resetColors();
@@ -484,14 +490,14 @@ function profileTable() {
     var c = "";
     c += '<table id="editProfile" style="width:100%">';
     c += '<tr><td id="profileName" colspan="2">{0}</td></tr>';
-    c += '<tr><td>{0}</td><td><input type="text" name="fltnm"/> {1}</td></tr>'.format(MSG_FLEET_NAME, MSG_FLEET_NAME_HINT);
-    c += '<tr><td>{0}</td><td><input type="text" name="fltpw"/> {1}</td></tr>'.format(MSG_FLEET_PW, MSG_LEAVE_EMPTY_HINT);
-    c += '<tr><td>{0}</td><td><input type="text" name="flttg"/> {1}</td></tr>'.format(MSG_FLEET_TAG, MSG_LEAVE_EMPTY_HINT);
+    c += '<tr><td>{0}</td><td><input type="text" name="fltnm" class="text"/> {1}</td></tr>'.format(MSG_FLEET_NAME, MSG_FLEET_NAME_HINT);
+    c += '<tr><td>{0}</td><td><input type="text" name="fltpw" class="text"/> {1}</td></tr>'.format(MSG_FLEET_PW, MSG_LEAVE_EMPTY_HINT);
+    c += '<tr><td>{0}</td><td><input type="text" name="flttg" class="text"/> {1}</td></tr>'.format(MSG_FLEET_TAG, MSG_LEAVE_EMPTY_HINT);
     c += '<tr><td>{0}</td><td><select name="ntrytyp"></select> <select name="qdtyp"></select></td></tr>'.format(MSG_ENTRY_TYPE);
     c += '<tr><td></td><td><input type="checkbox" name="chktrn" id="chktrn"/> <label for="chktrn">{0}</label></td></tr>'.format(MSG_ACTIVATE_TARN);
     c += '<tr><td></td><td><input type="checkbox" name="chkcw" id="chkcw"/> <label for="chkcw">{0}</label></td></tr>'.format(MSG_CLANWACHE_PROFIL);
     c += '<tr><td></td><td><input type="checkbox" name="chkgnr" id="chkgnr"/> <label for="chkgnr">{0}</label></td></tr>'.format(MSG_IGNORE_PROFILE);
-    c += '<tr><td></td><td><input type="button" name="svprlf" value="{0}"/> <input type="button" name="rmprlf" value="{1}"/></td></tr>'.format(MSG_SAVE_PROFILE, MSG_REMOVE_PROFILE);
+    c += '<tr><td></td><td><input type="button" name="svprlf" value="{0}" class="button"/> <input type="button" name="rmprlf" value="{1}" class="button"/></td></tr>'.format(MSG_SAVE_PROFILE, MSG_REMOVE_PROFILE);
     c += '</table>';
     return c;
 }
@@ -583,9 +589,10 @@ function portalIntegration() {
 
 
 function portalGui(bestMatch) {
-    $('table[class="full gnfo"] tr:nth-child(1)').append('<td class="gnfo"></td>');
+    $('table[class="full gnfo"] tr:nth-child(1) td').attr('colspan', '2');
     $('table[class="full gnfo"] tr:nth-child(2)').append('<td id="prfls"></td>');
-    $('table[class="full gnfo"] tr:nth-child(3)').append('<td class="gnfo"></td>');
+    $('table[class="full gnfo"] tr:nth-child(3) td').attr('colspan', '2');
+    $('table[class="full gnfo"]').attr( "class", "full wrpd" );
     var prf = "";
 
     $.each(getProfiles(), function (k, v) {
