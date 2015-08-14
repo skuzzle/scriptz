@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        RX Flottenprofile
-// @version     0.4.1
+// @version     0.5.0
 // @description Verwalten von verschiedenen Flottenprofilen
 // @grant       GM_setValue
 // @grant       GM_getValue
@@ -16,7 +16,7 @@
 
 /*
 Changelog
-Version 0.5.0 - TODO
+Version 0.5.0 - 14.08.2015
     + Automatically select newly created profile for editing
     + Do not jump to top of page when adding ships
     + Minor beautifications

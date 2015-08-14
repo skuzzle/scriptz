@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        RX Flottenprofile
-// @version     0.4
+// @version     0.5.0
 // @description Verwalten von verschiedenen Flottenprofilen
 // @grant 	    GM_setValue
 // @grant 	    GM_getValue
