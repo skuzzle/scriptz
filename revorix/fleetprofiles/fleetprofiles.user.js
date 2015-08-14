@@ -406,6 +406,8 @@ function resetColors() {
 
 function colorShips(profile) {
     var table = findShipTable();
+    var actualships = [];
+
     table.find("tr:nth-child(n+3)").each(function() {
         var ftd = $(this).find("td:nth-child(1)").first();
         var ids = idFromTd(ftd);
@@ -414,8 +416,16 @@ function colorShips(profile) {
             ftd.parent().css( { color : DEACTIVATED_COLOR } );
         } else {
             ftd.parent().css( { color : "white" } );
+            actualships.push(id);
         }
     });
+
+    if (profile.ids.length != actualships.length) {
+        var missingships = $(profile.ids).not(actualships).get();
+
+        for (var i = 0; i < missingships.length; i++)
+            removeShip(profile, missingships[i]);
+    }
 }
 
 function hideShowButtons(profile) {
