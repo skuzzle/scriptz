@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        RX Flottenprofile
-// @version     0.4.1
+// @version     0.5.0
 // @description Verwalten von verschiedenen Flottenprofilen
 // @grant       GM_setValue
 // @grant       GM_getValue
@@ -9,16 +9,14 @@
 // @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/fleetprofiles/fleetprofiles.user.js
 // @namespace   projectpolly.de
 // @require     http://code.jquery.com/jquery-1.10.2.min.js
-// @include     http://www.revorix.info/php/schiff_portal.php*
-// @include     http://www.revorix.info/php/schiff_list.php*
-// @include     http://87.106.151.92/*/schiff_portal.php*
-// @include     http://87.106.151.92/*/schiff_list.php*
+// @include     /(87\.106\.151\.92|www\.revorix\.info)\S*/schiff_portal\.php/
+// @include     /(87\.106\.151\.92|www\.revorix\.info)\S*/schiff_list\.php(\?(asr|cabzug|hsid|hrsid|cusid=\d+&cuzid)=\d+)?#?$/
 // ==/UserScript==
 
 
 /*
 Changelog
-Version 0.5.0 - TODO
+Version 0.5.0 - 14.08.2015
     + Automatically select newly created profile for editing
     + Do not jump to top of page when adding ships
     + Minor beautifications
@@ -408,6 +406,8 @@ function resetColors() {
 
 function colorShips(profile) {
     var table = findShipTable();
+    var actualships = [];
+
     table.find("tr:nth-child(n+3)").each(function() {
         var ftd = $(this).find("td:nth-child(1)").first();
         var ids = idFromTd(ftd);
@@ -416,8 +416,16 @@ function colorShips(profile) {
             ftd.parent().css( { color : DEACTIVATED_COLOR } );
         } else {
             ftd.parent().css( { color : "white" } );
+            actualships.push(id);
         }
     });
+
+    if (profile.ids.length != actualships.length) {
+        var missingships = $(profile.ids).not(actualships).get();
+
+        for (var i = 0; i < missingships.length; i++)
+            removeShip(profile, missingships[i]);
+    }
 }
 
 function hideShowButtons(profile) {
