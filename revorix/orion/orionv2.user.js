@@ -34,7 +34,10 @@
 
 /*
 Changelog
-    [ CURRENT ] Version 1.10.1 - 06.03.2015
+    [ CURRENT ] Version 1.11.0 - TODO
+        + Neuer Webservice zum captcha lösen
+        
+    Version 1.10.1 - 06.03.2015
         + Auto-Slurp innerhalb des Laderaums (de)aktivierbar
         + 'Zuück zur Karte' Funktion nach dem beladen von Schiffen
         + Verbessertes Layout in der Frachtraum Ansicht
@@ -159,6 +162,7 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
+CHANGELOG['1.11.0'] = "* Neuer Webservice zum Captcha lösen.";
 CHANGELOG['1.10.1'] = "* Auto-Slurp innerhalb des Laderaums (de)aktivierbar.\n* 'Zuück zur Karte' Funktion nach dem beladen von Schiffen.\n* Verbessertes Layout in der Frachtraum Ansicht.";
 CHANGELOG['1.10.0'] = "* Button zum einfachen Einladen von Resourcen hinzugefügt.\n* Auto-Slurp: Resourcen automatisch auf Schiffe verteilen wenn der Frachtraum aufgerufen wird.";
 CHANGELOG['1.9.0']  = "* Modus zum sicheren trainieren von Schiffen hinzugefügt (Beta).\n* Erkennung der Clanwache an den neuen Flotten-Tag angepasst.";
@@ -169,6 +173,7 @@ CHANGELOG['1.8.3']  = "* Neue Einstellungen: Soll Login Button deaktiviert werde
 
 //API URLs
 var POLLY_URL = LOCAL_SERVER ? "https://localhost:83" : "https://projectpolly.de:443";
+var CAPTCHA_URL = "http://projectpolly.de/polly/rest/captcha"
 var API_REQUEST_SECTOR = "/api/orion/json/sector";
 var API_REQUEST_QUADRANT = "/api/orion/json/quadrant";
 var API_POST_SECTOR = "/api/orion/json/postSector";
@@ -1432,7 +1437,7 @@ function handleInsertCode(property, oldVal, newVal) {
     }
 
     if (newVal) {
-        requestJson(API_REQUEST_CODE, {}, function (result) {
+        requestJson(CAPTCHA_URL, "/", {}, function (result) {
             var inp = $('input[name="ucode"]');
             inp.val(result.code);
             var idx = result.code.indexOf("?");
@@ -2197,8 +2202,12 @@ function post(api, body, onSuccess) {
 //Performs a simple GET request and parses the result as JSON passing it to the
 //provided function
 function requestJson(api, params, onSuccess) {
+    requestJson(POLLY_URL, api, params, onSuccess);
+}
+
+function requestJson(base, api, params, onSuccess) {
     GM_xmlhttpRequest({
-        url : makeApiUrl(api, true, params),
+        url : makeApiUrl(base, api, true, params),
         timeout : DEFAULT_REQUEST_TIMEOUT,
         method : "GET",
         onload : function (response) {
@@ -2217,6 +2226,7 @@ function requestJson(api, params, onSuccess) {
         }
     });
 }
+
 
 //Requests a json object from the provided url and passes it to the onSuccess
 //function if the request was successful. Additionally, the result will be
@@ -2246,8 +2256,8 @@ function forceRequestCachedJson(api, params, cacheKey, onSuccess) {
     requestCachedJson(api, params, cacheKey, onSuccess);
 }
 
-function makeApiUrl(api, needLogin, params) {
-    var url = POLLY_URL + api;
+function makeApiUrl(base, api, needLogin, params) {
+    var url = base + api;
     if (needLogin) {
         checkCredentials();
         params["user"] = getPollyUserName();
@@ -2256,6 +2266,10 @@ function makeApiUrl(api, needLogin, params) {
     params["version"] = VERSION;
     var query = makeQueryPart(params);
     return url += "?" + query;
+}
+
+function makeApiUrl(api, needLogin, params) {
+    return makeApiUrl(POLLY_URL, api, needLogin, params);
 }
 
 function makeQueryPart(params) {
