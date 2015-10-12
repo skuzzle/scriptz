@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.10.1
+// @version     1.11.0
 // @description Polly Revorix Integration
 // @grant       GM_setValue
 // @grant       GM_getValue
@@ -34,7 +34,7 @@
 
 /*
 Changelog
-    [ CURRENT ] Version 1.11.0 - TODO
+    [ CURRENT ] Version 1.11.0 - 10.10.2015
         + Neuer Webservice zum captcha lösen
         
     Version 1.10.1 - 06.03.2015
@@ -173,7 +173,7 @@ CHANGELOG['1.8.3']  = "* Neue Einstellungen: Soll Login Button deaktiviert werde
 
 //API URLs
 var POLLY_URL = LOCAL_SERVER ? "https://localhost:83" : "https://projectpolly.de:443";
-var CAPTCHA_URL = "http://projectpolly.de/polly/rest/captcha"
+var CAPTCHA_URL = "http://projectpolly.de/polly/rest/captcha";
 var API_REQUEST_SECTOR = "/api/orion/json/sector";
 var API_REQUEST_QUADRANT = "/api/orion/json/quadrant";
 var API_POST_SECTOR = "/api/orion/json/postSector";
@@ -1437,7 +1437,7 @@ function handleInsertCode(property, oldVal, newVal) {
     }
 
     if (newVal) {
-        requestJson(CAPTCHA_URL, "/", {}, function (result) {
+        requestJson(CAPTCHA_URL, "", {}, function (result) {
             var inp = $('input[name="ucode"]');
             inp.val(result.code);
             var idx = result.code.indexOf("?");
@@ -2206,8 +2206,9 @@ function requestJson(api, params, onSuccess) {
 }
 
 function requestJson(base, api, params, onSuccess) {
+    var requestUrl = makeApiUrlX(base, api, true, params);
     GM_xmlhttpRequest({
-        url : makeApiUrl(base, api, true, params),
+        url : requestUrl,
         timeout : DEFAULT_REQUEST_TIMEOUT,
         method : "GET",
         onload : function (response) {
@@ -2256,7 +2257,7 @@ function forceRequestCachedJson(api, params, cacheKey, onSuccess) {
     requestCachedJson(api, params, cacheKey, onSuccess);
 }
 
-function makeApiUrl(base, api, needLogin, params) {
+function makeApiUrlX(base, api, needLogin, params) {
     var url = base + api;
     if (needLogin) {
         checkCredentials();
@@ -2269,7 +2270,7 @@ function makeApiUrl(base, api, needLogin, params) {
 }
 
 function makeApiUrl(api, needLogin, params) {
-    return makeApiUrl(POLLY_URL, api, needLogin, params);
+    return makeApiUrlX(POLLY_URL, api, needLogin, params);
 }
 
 function makeQueryPart(params) {
