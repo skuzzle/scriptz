@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.11.0
+// @version     1.11.1
 // @description Polly Revorix Integration
 // @grant       GM_setValue
 // @grant       GM_getValue
@@ -34,6 +34,9 @@
 
 /*
 Changelog
+    [ CURRENT ] Version 1.11.1 - 16.10.2015
+        + Orion Webservice verbessert
+
     [ CURRENT ] Version 1.11.0 - 10.10.2015
         + Neuer Webservice zum captcha lösen
         
@@ -162,6 +165,7 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
+CHANGELOG['1.11.1'] = "* Orion Webservice verbessert.";
 CHANGELOG['1.11.0'] = "* Neuer Webservice zum Captcha lösen.";
 CHANGELOG['1.10.1'] = "* Auto-Slurp innerhalb des Laderaums (de)aktivierbar.\n* 'Zuück zur Karte' Funktion nach dem beladen von Schiffen.\n* Verbessertes Layout in der Frachtraum Ansicht.";
 CHANGELOG['1.10.0'] = "* Button zum einfachen Einladen von Resourcen hinzugefügt.\n* Auto-Slurp: Resourcen automatisch auf Schiffe verteilen wenn der Frachtraum aufgerufen wird.";
@@ -1437,7 +1441,7 @@ function handleInsertCode(property, oldVal, newVal) {
     }
 
     if (newVal) {
-        requestJson(CAPTCHA_URL, "", {}, function (result) {
+        requestJsonX(CAPTCHA_URL, "", {}, function (result) {
             var inp = $('input[name="ucode"]');
             inp.val(result.code);
             var idx = result.code.indexOf("?");
@@ -2202,10 +2206,10 @@ function post(api, body, onSuccess) {
 //Performs a simple GET request and parses the result as JSON passing it to the
 //provided function
 function requestJson(api, params, onSuccess) {
-    requestJson(POLLY_URL, api, params, onSuccess);
+    requestJsonX(POLLY_URL, api, params, onSuccess);
 }
 
-function requestJson(base, api, params, onSuccess) {
+function requestJsonX(base, api, params, onSuccess) {
     var requestUrl = makeApiUrlX(base, api, true, params);
     GM_xmlhttpRequest({
         url : requestUrl,
