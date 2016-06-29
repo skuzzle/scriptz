@@ -11,7 +11,6 @@
 // @updateURL   https://github.com/skuzzle/scriptz/raw/master/revorix/orion/orionv2.user.js
 // @namespace   projectpolly.de
 // @require     http://code.jquery.com/jquery-1.10.2.min.js
-// @require     http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js
 // @include     http://www.revorix.info/*/map.php*
 // @include     http://www.revorix.info/*/news.php*
 // @include     http://www.revorix.info/*/rx.php?set=5&fid=*
@@ -865,7 +864,7 @@ function saveOrionSettings() {
     var userName = $("#pollyName").val(),
     tag = $("#clantag").val(),
     pw = $("#pollyPw").val(),
-    hash = CryptoJS.MD5(pw).toString();
+    hash = "not needed anymore";
 
     GM_setValue(PROPERTY_LOGIN_NAME, userName);
     if (pw !== "") {
