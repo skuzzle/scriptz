@@ -166,6 +166,7 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
+CHANGELOG['1.12.0'] = "* CryptoJS dependency entfernt.";
 CHANGELOG['1.11.1'] = "* Orion Webservice verbessert.";
 CHANGELOG['1.11.0'] = "* Neuer Webservice zum Captcha lösen.";
 CHANGELOG['1.10.1'] = "* Auto-Slurp innerhalb des Laderaums (de)aktivierbar.\n* 'Zuück zur Karte' Funktion nach dem beladen von Schiffen.\n* Verbessertes Layout in der Frachtraum Ansicht.";
