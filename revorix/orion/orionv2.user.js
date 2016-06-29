@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.11.1
+// @version     1.12.0
 // @description Polly Revorix Integration
 // @grant       GM_setValue
 // @grant       GM_getValue
@@ -33,10 +33,12 @@
 
 /*
 Changelog
-    [ CURRENT ] Version 1.11.1 - 16.10.2015
+    [ CURRENT ] Version 1.12.0
+        - CryptoJS Dependency entfernt
+    Version 1.11.1 - 16.10.2015
         + Orion Webservice verbessert
 
-    [ CURRENT ] Version 1.11.0 - 10.10.2015
+    Version 1.11.0 - 10.10.2015
         + Neuer Webservice zum captcha lösen
         
     Version 1.10.1 - 06.03.2015
