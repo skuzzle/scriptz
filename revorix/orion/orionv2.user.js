@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Polly Orion V2
-// @version     1.12.0
+// @version     1.13.0
 // @description Polly Revorix Integration
 // @grant       GM_setValue
 // @grant       GM_getValue
@@ -33,7 +33,10 @@
 
 /*
 Changelog
-    [ CURRENT ] Version 1.12.0
+    [ CURRENT ] Version 1.13.0
+        - Use SSL
+        
+    Version 1.12.0
         - CryptoJS Dependency entfernt
     Version 1.11.1 - 16.10.2015
         + Orion Webservice verbessert
@@ -166,6 +169,7 @@ var SCRIPT_EXECUTION_DELAY = 150; //ms
 
 // Runtime available changelog
 var CHANGELOG = {};
+CHANGELOG['1.13.0'] = "* Polly nutzt jetzt HTTPS.";
 CHANGELOG['1.12.0'] = "* CryptoJS dependency entfernt.";
 CHANGELOG['1.11.1'] = "* Orion Webservice verbessert.";
 CHANGELOG['1.11.0'] = "* Neuer Webservice zum Captcha lösen.";
@@ -179,7 +183,7 @@ CHANGELOG['1.8.3']  = "* Neue Einstellungen: Soll Login Button deaktiviert werde
 
 //API URLs
 var POLLY_URL = LOCAL_SERVER ? "https://localhost:83" : "https://projectpolly.de:443";
-var CAPTCHA_URL = "http://projectpolly.de/polly/rest/captcha";
+var CAPTCHA_URL = "https://projectpolly.de/polly/rest/captcha";
 var API_REQUEST_SECTOR = "/api/orion/json/sector";
 var API_REQUEST_QUADRANT = "/api/orion/json/quadrant";
 var API_POST_SECTOR = "/api/orion/json/postSector";
